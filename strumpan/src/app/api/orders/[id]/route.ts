@@ -1,6 +1,6 @@
 import type { Order } from "@/types/order";
 
-export async function GET(_request: Request, { params }: { params: Promise<{ id: number }>}) {
+export async function GET(_request: Request, { params }: { params: Promise<{ id: string }>}) {
 
     const { id } = await params;
     const order_id = Number(id);
