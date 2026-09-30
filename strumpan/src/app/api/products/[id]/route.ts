@@ -1,4 +1,4 @@
-import type { Product } from "@/types/product";
+import type { ProductVariant, Product } from "@/types/product";
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
 
@@ -17,6 +17,15 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     // TODO: Add db lookup
 
     // TODO: This is a test response.
+
+    const variant : ProductVariant = {
+        variant_id: 1,
+        size: "46",
+        color: "black",
+        sku: "1",
+        availableQuantity: 1
+    }
+
     const product : Product = {
         product_id: product_id,
         category_id: 1,
@@ -24,7 +33,8 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
         description: "Everyday socks, for everyday needs",
         price: 12900,
         image_url: "",
-        created_at: new Date(Date.now()) // TODO check if this is needed
+        created_at: new Date(Date.now()), // TODO check if this is needed
+        variants: [variant, variant]
     };
     return Response.json(product);
 }
