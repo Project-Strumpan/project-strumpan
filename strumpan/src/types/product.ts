@@ -13,6 +13,5 @@ export type Product = {
     description: string | null;
     price: number;
     image_url: string | null;
-    created_at: Date, // TODO: check if this is needed
     variants: ProductVariant[];
 }
