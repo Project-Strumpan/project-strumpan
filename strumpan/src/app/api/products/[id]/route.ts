@@ -1,3 +1,4 @@
+import { NextRequest, NextResponse } from "next/server";
 import type { ProductVariant, Product } from "@/types/product";
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -6,7 +7,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     const product_id = Number(id);
 
     if (!Number.isSafeInteger(product_id) || product_id < 1) {
-        return Response.json(
+        return NextResponse.json(
             { error: "Invalid order ID"},
             { status: 400 }
         )
@@ -33,8 +34,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
         description: "Everyday socks, for everyday needs",
         price: 12900,
         image_url: "",
-        created_at: new Date(Date.now()), // TODO check if this is needed
         variants: [variant, variant]
     };
-    return Response.json(product);
+    return NextResponse.json(product);
 }

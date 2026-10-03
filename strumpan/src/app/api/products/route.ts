@@ -1,4 +1,10 @@
+import { NextRequest, NextResponse } from "next/server";
+
 export async function GET() {
+
+    // TODO: Add input checks
+
+    // TODO: Add db lookup
 
     // TODO: This is a test response
     const products = [
@@ -9,7 +15,6 @@ export async function GET() {
             description: "Everyday socks, for everyday needs",
             price: 12900,
             image_url: "",
-            created_at: new Date(Date.now()) // TODO check if this is needed
         },
         {
             product_id: 2,
@@ -18,8 +23,7 @@ export async function GET() {
             description: "Not Everyday socks, for not everyday needs",
             price: 69690,
             image_url: "",
-            created_at: new Date(Date.now()) // TODO check if this is needed
         }
     ];
-    return Response.json(products);
+    return NextResponse.json(products);
 }
