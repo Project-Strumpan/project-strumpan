@@ -1,3 +1,19 @@
+/*
+ * GET endpoint for products
+ * Author: Alan Tokarev
+ * Date: 2026-10-04
+ * Dependencies: next/server, /lib/db -> mariadb, .env.local
+ * 
+ * Template endpoint request, where id is the product_id:
+    const response = await fetch("/api/products/[id]");
+    if (!response.ok) {
+        throw new Error("Could not fetch product");
+    }
+
+    const products = await response.json();
+ * 
+*/
+
 import { NextRequest, NextResponse } from "next/server";
 import type { ProductVariant, ProductWithVariants } from "@/types/product";
 
