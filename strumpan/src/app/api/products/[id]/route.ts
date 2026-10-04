@@ -100,7 +100,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
                 available_quantity: Number(variant.available_quantity),
             })
         );
-
+        
         const product: ProductWithVariants = {
             product_id: productRow.product_id,
             category_id: productRow.category_id,
