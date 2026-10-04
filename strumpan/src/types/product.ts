@@ -3,7 +3,7 @@ export type ProductVariant = {
     size: string;
     color: string | null;
     sku: string;
-    availableQuantity: number;
+    available_quantity: number;
 }
 
 export type ProductWithVariants = {
