@@ -39,6 +39,9 @@ CREATE TABLE Products(
     product_description TEXT,
     price DECIMAL(12, 2) NOT NULL CHECK (price >= 0),
     picture_url VARCHAR(500),
+    origin VARCHAR(100),
+    material VARCHAR(255),
+    environmental_labels VARCHAR(255),
     created_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (category_id) REFERENCES Categories(category_id)
         ON DELETE CASCADE ON UPDATE CASCADE

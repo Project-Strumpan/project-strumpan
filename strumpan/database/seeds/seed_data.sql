@@ -63,10 +63,10 @@ INSERT INTO Categories (category_name, category_description) VALUES
     ('Compression socks', 'Supportive compression socks'),
     ('Sports socks', 'Durable socks for training and sports');
 
-INSERT INTO Products (category_id, product_name, product_description, price, picture_url) VALUES
-    (1, 'Classic Cotton Sock', 'Soft cotton socks made in Spain.', 89.00, 'https://example.test/images/classic-cotton-sock.jpg'),
-    (2, 'Compression Sock Pro', 'Compression socks for long workdays and recovery.', 149.00, 'https://example.test/images/compression-sock-pro.jpg'),
-    (3, 'Active Sport Sock', 'Breathable sports socks with reinforced heel and toe.', 109.00, 'https://example.test/images/active-sport-sock.jpg');
+INSERT INTO Products (category_id, product_name, product_description, price, picture_url, origin, material, environmental_labels) VALUES
+    (1, 'Classic Cotton Sock', 'Soft cotton socks for everyday use.', 89.00, 'https://example.test/images/classic-cotton-sock.jpg', 'Spain', '80% Organic Cotton, 17% Polyamide, 3% Elastane', 'OEKO-TEX Standard 100, GOTS'),
+    (2, 'Compression Sock Pro', 'Compression socks for long workdays and recovery.', 149.00, 'https://example.test/images/compression-sock-pro.jpg', 'Portugal', '65% Polyamide, 25% Merino Wool, 10% Elastane', 'OEKO-TEX Standard 100'),
+    (3, 'Active Sport Sock', 'Breathable sports socks with reinforced heel and toe.', 109.00, 'https://example.test/images/active-sport-sock.jpg', 'Sweden', '75% Recycled Polyamide, 20% Organic Cotton, 5% Elastane', 'GRS (Global Recycled Standard)');
 
 INSERT INTO Product_variants (product_id, product_variant_size, color, sku) VALUES
     (1, '37-39', 'Black', 'CCS-BLK-37-39'),
