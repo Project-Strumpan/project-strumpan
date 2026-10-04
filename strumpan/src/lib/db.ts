@@ -2,7 +2,7 @@
  * Creates MariaDB database pool
  * Author: Alan Tokarev
  * Date: 2026-10-04
- * Dependencies: .env.local, mariadb
+ * Dependencies: .env.local -> (db credentials), mariadb
 */
 
 import mariadb from "mariadb";
