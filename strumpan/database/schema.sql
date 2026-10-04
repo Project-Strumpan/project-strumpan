@@ -119,7 +119,7 @@ CREATE TABLE Shipments (
     order_id INT NOT NULL,
     carrier VARCHAR(100),
     tracking_number VARCHAR(255) UNIQUE,
-    status ENUM('pending', 'packed', 'shipped', 'delivered', 'returned') NOT NULL,
+    shipment_status ENUM('pending', 'packed', 'shipped', 'delivered', 'returned') NOT NULL,
     shipped_date TIMESTAMP NULL,
     delivered_date TIMESTAMP NULL,
     FOREIGN KEY (order_id) REFERENCES Orders(order_id)
