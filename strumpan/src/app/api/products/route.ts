@@ -18,6 +18,8 @@ import { NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import { demoOnly } from "@/lib/demo-only"; // TODO: delete after review and in prod
 
+import type { CatalogueProduct } from "@/types/product";
+
 export async function GET() {
     const disabled = demoOnly();
     if (disabled) return disabled;
@@ -26,7 +28,7 @@ export async function GET() {
     try {
         connection = await pool.getConnection();
 
-        const products = await connection.query(
+        const products = await connection.query<CatalogueProduct[]>(
             `
             SELECT 
                 product_id,

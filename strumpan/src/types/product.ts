@@ -6,7 +6,7 @@ export type ProductVariant = {
     availableQuantity: number;
 }
 
-export type Product = {
+export type ProductWithVariants = {
     product_id: number;
     category_id: number;
     name: string;
@@ -14,4 +14,13 @@ export type Product = {
     price: number;
     image_url: string | null;
     variants: ProductVariant[];
+}
+
+export type CatalogueProduct = {
+    product_id: number;
+    category_id: number;
+    name: string;
+    description: string | null;
+    price: number;
+    image_url: string | null;
 }
