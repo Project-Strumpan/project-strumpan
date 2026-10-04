@@ -28,8 +28,11 @@ CREATE TABLE Addresses(
 
 CREATE TABLE Categories(
     category_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    parent_id INT NOT NULL AUTO_INCREMENT,
     category_name VARCHAR(255) NOT NULL,
     category_description TEXT
+    FOREIGN KEY (parent_id) REFERENCES Categories(category_id)
+        ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE Products(
