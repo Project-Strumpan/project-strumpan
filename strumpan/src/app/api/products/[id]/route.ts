@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import type { ProductVariant, Product } from "@/types/product";
+import type { ProductVariant, ProductWithVariants } from "@/types/product";
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
 
@@ -27,7 +27,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
         availableQuantity: 1
     }
 
-    const product : Product = {
+    const product : ProductWithVariants = {
         product_id: product_id,
         category_id: 1,
         name: "Everyday Socks",
