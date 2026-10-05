@@ -1,3 +1,12 @@
+/*
+ * POST endpoint for submitting checkout data
+ * Author: Alan Tokarev
+ * Date: 2026-10-05
+ * Dependencies: next/server, @/lib/db -> mariadb, .env.local, @/types/order, @/types/auth
+ * Returns: order_id, order_status, total_cost, items (each order item)
+ *
+*/
+
 import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
