@@ -83,9 +83,9 @@ CREATE TABLE Orders (
     FOREIGN KEY (customer_id) REFERENCES Customers(customer_id)
         ON DELETE CASCADE ON UPDATE CASCADE,
     FOREIGN KEY (delivery_address_id) REFERENCES Addresses(address_id)
-        ON DELETE CASCADE ON UPDATE CASCADE,
+        ON DELETE RESTRICT ON UPDATE CASCADE,
     FOREIGN KEY (invoice_address_id) REFERENCES Addresses(address_id)
-        ON DELETE CASCADE ON UPDATE CASCADE
+        ON DELETE RESTRICT ON UPDATE CASCADE
 );
 
 CREATE TABLE Order_items (
