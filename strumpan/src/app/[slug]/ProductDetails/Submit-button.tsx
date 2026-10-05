@@ -1,5 +1,6 @@
 'use client';
 
+import { Button } from '@/components/ui/button';
 import { ArrowRight, Loader2 } from 'lucide-react';
 import { useFormStatus } from 'react-dom';
 
@@ -7,9 +8,10 @@ export function SubmitButton() {
   const { pending } = useFormStatus();
 
   return (
-    <button
+    <Button
       type="submit"
       disabled={pending}
+      variant="outline"
       className="w-full rounded-full"
     >
       {pending ? (
@@ -23,6 +25,6 @@ export function SubmitButton() {
           <ArrowRight className="ml-2 h-4 w-4" />
         </>
       )}
-    </button>
+    </Button>
   );
 }
