@@ -65,6 +65,8 @@ export default function Home() {
             Documentation
           </a>
         </div>
+        <ProductCatalog/>
+
       </main>
     </div>
   );
