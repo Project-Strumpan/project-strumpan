@@ -1,4 +1,6 @@
 import Image from "next/image";
+import ProductCatalog from "./product-catalog";
+
 
 export default function Home() {
   return (
@@ -63,6 +65,8 @@ export default function Home() {
             Documentation
           </a>
         </div>
+        <ProductCatalog/>
+
       </main>
     </div>
   );
