@@ -1,5 +1,5 @@
 import { productsArray } from '../../../productsStore';
-import { Button } from '@/components/ui/button';
+import AddToCart from './AddToCart';
 //import { db } from '@/lib/db';
 
 // const product = await db.product.findUnique({
@@ -25,11 +25,5 @@ export default async function ProductDetails({params, }: {
         ))}
             
         </>
-    )
-}
-function AddToCart(prop: any){
-    const product = prop.product;
-    return(
-        <Button variant="primary">Add To Cart</Button>
     )
 }
