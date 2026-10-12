@@ -1,3 +1,5 @@
+"use client"
+
 import { createContext, useState, ReactNode } from "react";
 import { getProductData, productsArray } from "../productsStore"
 
@@ -16,7 +18,6 @@ type CartContextType = {
 };
 
 export const CartContext = createContext<CartContextType | undefined>(undefined);
-
 
 export function CartProvider({children}: {children: ReactNode}) {
     
@@ -107,6 +108,8 @@ export function CartProvider({children}: {children: ReactNode}) {
         </CartContext.Provider>
     )
 }
+
+export default CartProvider;
 
 // Context (cart, addToCart, removeCart)
 // Provider -> gives the React app access too all the things in your context
