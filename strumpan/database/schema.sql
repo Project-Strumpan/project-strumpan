@@ -3,7 +3,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 
 -- Customers and Addresses
 
-CREATE TABLE Customers (
+CREATE TABLE IF NOT EXISTS Customers (
     customer_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     email VARCHAR(255) NOT NULL UNIQUE,
@@ -12,7 +12,7 @@ CREATE TABLE Customers (
     created_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE Addresses(
+CREATE TABLE IF NOT EXISTS Addresses(
     address_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     customer_id INT NOT NULL,
     street VARCHAR(255) NOT NULL,
@@ -24,18 +24,18 @@ CREATE TABLE Addresses(
         ON DELETE CASCADE ON UPDATE CASCADE
 );
 
---Product catalog
+-- Product catalog
 
-CREATE TABLE Categories(
+CREATE TABLE IF NOT EXISTS Categories(
     category_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    parent_id INT NOT NULL AUTO_INCREMENT,
+    parent_id INT NOT NULL,
     category_name VARCHAR(255) NOT NULL,
-    category_description TEXT
+    category_description TEXT,
     FOREIGN KEY (parent_id) REFERENCES Categories(category_id)
         ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-CREATE TABLE Products(
+CREATE TABLE IF NOT EXISTS Products(
     product_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     category_id INT NOT NULL,
     product_name VARCHAR(255) NOT NULL,
@@ -50,7 +50,7 @@ CREATE TABLE Products(
         ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-CREATE TABLE Product_variants(
+CREATE TABLE IF NOT EXISTS Product_variants(
     variant_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     product_id INT NOT NULL,
     product_variant_size VARCHAR(50) NOT NULL,
@@ -60,7 +60,7 @@ CREATE TABLE Product_variants(
         ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-CREATE TABLE Inventory(
+CREATE TABLE IF NOT EXISTS Inventory(
     inventory_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     variant_id INT NOT NULL UNIQUE,
     quantity INT NOT NULL DEFAULT 0,
@@ -72,7 +72,7 @@ CREATE TABLE Inventory(
 
 -- Orders, order_items and payments
 
-CREATE TABLE Orders (
+CREATE TABLE IF NOT EXISTS Orders (
     order_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     customer_id INT NOT NULL,
     delivery_address_id INT NOT NULL,
@@ -88,7 +88,7 @@ CREATE TABLE Orders (
         ON DELETE RESTRICT ON UPDATE CASCADE
 );
 
-CREATE TABLE Order_items (
+CREATE TABLE IF NOT EXISTS Order_items (
     order_item_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     order_id INT NOT NULL,
     variant_id INT NOT NULL,
@@ -100,7 +100,7 @@ CREATE TABLE Order_items (
         ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-CREATE TABLE Payments (
+CREATE TABLE IF NOT EXISTS Payments (
     payment_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     order_id INT NOT NULL,
     payment_method ENUM('klarna', 'stripe', 'swish') NOT NULL, -- TO BE SET LATER ON
@@ -114,7 +114,7 @@ CREATE TABLE Payments (
 
 -- Shipments
 
-CREATE TABLE Shipments (
+CREATE TABLE IF NOT EXISTS Shipments (
     shipment_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     order_id INT NOT NULL,
     carrier VARCHAR(100),
@@ -126,7 +126,7 @@ CREATE TABLE Shipments (
         ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-CREATE TABLE Shipment_items (
+CREATE TABLE IF NOT EXISTS Shipment_items (
     shipment_item_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     shipment_id INT NOT NULL,
     order_item_id INT NOT NULL,
@@ -140,19 +140,19 @@ CREATE TABLE Shipment_items (
 
 -- Admin, roles, permissions, audit log
 
-CREATE TABLE Roles (
+CREATE TABLE IF NOT EXISTS Roles (
     role_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     role_name VARCHAR(100) NOT NULL UNIQUE,
     roles_description TEXT
 );
 
-CREATE TABLE Permissions (
+CREATE TABLE IF NOT EXISTS Permissions (
     permission_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     permissions_name VARCHAR(100) NOT NULL UNIQUE,
     permissions_description TEXT
 );
 
-CREATE TABLE Role_permissions (
+CREATE TABLE IF NOT EXISTS Role_permissions (
     role_id INT NOT NULL,
     permission_id INT NOT NULL,
     PRIMARY KEY (role_id, permission_id),
@@ -162,7 +162,7 @@ CREATE TABLE Role_permissions (
         ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-CREATE TABLE Admins (
+CREATE TABLE IF NOT EXISTS Admins (
     admin_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     role_id INT NOT NULL,
     admin_name VARCHAR(255) NOT NULL,
@@ -172,7 +172,7 @@ CREATE TABLE Admins (
         ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-CREATE TABLE Audit_log (
+CREATE TABLE IF NOT EXISTS Audit_log (
     log_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     admin_id INT NOT NULL,
     handling VARCHAR(255) NOT NULL,
@@ -186,18 +186,18 @@ CREATE TABLE Audit_log (
 
 -- Indexes for common queries
 
-CREATE INDEX idx_addresses_customer_id ON Addresses(customer_id);
-CREATE INDEX idx_products_category_id ON Products(category_id);
-CREATE INDEX idx_product_variants_product_id ON Product_variants(product_id);
-CREATE INDEX idx_orders_customer_id ON Orders(customer_id);
-CREATE INDEX idx_orders_delivery_address_id ON Orders(delivery_address_id);
-CREATE INDEX idx_orders_invoice_address_id ON Orders(invoice_address_id);
-CREATE INDEX idx_order_items_order_id ON Order_items(order_id);
-CREATE INDEX idx_order_items_variant_id ON Order_items(variant_id);
-CREATE INDEX idx_payments_order_id ON Payments(order_id);
-CREATE INDEX idx_shipments_order_id ON Shipments(order_id);
-CREATE INDEX idx_shipment_items_order_item_id ON Shipment_items(order_item_id);
-CREATE INDEX idx_audit_log_admin_id ON Audit_log(admin_id);
-CREATE INDEX idx_audit_log_table_record ON Audit_log(table_name, record_id);
+CREATE INDEX IF NOT EXISTS idx_addresses_customer_id ON Addresses(customer_id);
+CREATE INDEX IF NOT EXISTS idx_products_category_id ON Products(category_id);
+CREATE INDEX IF NOT EXISTS idx_product_variants_product_id ON Product_variants(product_id);
+CREATE INDEX IF NOT EXISTS idx_orders_customer_id ON Orders(customer_id);
+CREATE INDEX IF NOT EXISTS idx_orders_delivery_address_id ON Orders(delivery_address_id);
+CREATE INDEX IF NOT EXISTS idx_orders_invoice_address_id ON Orders(invoice_address_id);
+CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON Order_items(order_id);
+CREATE INDEX IF NOT EXISTS idx_order_items_variant_id ON Order_items(variant_id);
+CREATE INDEX IF NOT EXISTS idx_payments_order_id ON Payments(order_id);
+CREATE INDEX IF NOT EXISTS idx_shipments_order_id ON Shipments(order_id);
+CREATE INDEX IF NOT EXISTS idx_shipment_items_order_item_id ON Shipment_items(order_item_id);
+CREATE INDEX IF NOT EXISTS idx_audit_log_admin_id ON Audit_log(admin_id);
+CREATE INDEX IF NOT EXISTS idx_audit_log_table_record ON Audit_log(table_name, record_id);
 
 SET FOREIGN_KEY_CHECKS = 1;
