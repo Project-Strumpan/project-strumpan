@@ -1,9 +1,30 @@
-
 -- Strumpan test data
 -- Run schema_strumpan.sql before this file.
 -- The password_hash values below are placeholders only. Do not use them in production.
 
+SET FOREIGN_KEY_CHECKS = 0;
+
+TRUNCATE TABLE Shipment_items;
+TRUNCATE TABLE Shipments;
+TRUNCATE TABLE Payments;
+TRUNCATE TABLE Order_items;
+TRUNCATE TABLE Orders;
+TRUNCATE TABLE Inventory;
+TRUNCATE TABLE Product_variants;
+TRUNCATE TABLE Products;
+TRUNCATE TABLE Categories;
+TRUNCATE TABLE Addresses;
+TRUNCATE TABLE Customers;
+TRUNCATE TABLE Audit_log;
+TRUNCATE TABLE Admins;
+TRUNCATE TABLE Role_permissions;
+TRUNCATE TABLE Permissions;
+TRUNCATE TABLE Roles;
+
+SET FOREIGN_KEY_CHECKS = 1;
+
 START TRANSACTION;
+
 
 -- ============================================================================
 -- Roles and permissions
@@ -35,7 +56,6 @@ INSERT INTO Audit_log (admin_id, handling, table_name, record_id, details) VALUE
     (1, 'INSERT', 'Roles', 1, JSON_OBJECT('role_name', 'superadmin')),
     (2, 'UPDATE', 'Inventory', 1, JSON_OBJECT('quantity', 42, 'reason', 'Initial stock import'));
 
-
 -- ============================================================================
 -- Customers and addresses
 -- ============================================================================
@@ -53,15 +73,15 @@ INSERT INTO Addresses (customer_id, street, postal_code, city, country, type) VA
     (3, 'Lundagatan 4', '222 20', 'Lund', 'Sweden', 'delivery'),
     (3, 'Lundagatan 4', '222 20', 'Lund', 'Sweden', 'invoice');
 
-
 -- ============================================================================
 -- Product catalog and inventory
 -- ============================================================================
 
-INSERT INTO Categories (category_name, category_description) VALUES
-    ('Everyday socks', 'Comfortable socks for everyday use'),
-    ('Compression socks', 'Supportive compression socks'),
-    ('Sports socks', 'Durable socks for training and sports');
+-- parent_id is NOT NULL in the schema, so top-level categories reference themselves.
+INSERT INTO Categories (category_id, parent_id, category_name, category_description) VALUES
+    (1, 1, 'Everyday socks', 'Comfortable socks for everyday use'),
+    (2, 2, 'Compression socks', 'Supportive compression socks'),
+    (3, 3, 'Sports socks', 'Durable socks for training and sports');
 
 INSERT INTO Products (category_id, product_name, product_description, price, picture_url, origin, material, environmental_labels) VALUES
     (1, 'Classic Cotton Sock', 'Soft cotton socks for everyday use.', 89.00, 'https://example.test/images/classic-cotton-sock.jpg', 'Spain', '80% Organic Cotton, 17% Polyamide, 3% Elastane', 'OEKO-TEX Standard 100, GOTS'),
@@ -84,18 +104,11 @@ INSERT INTO Inventory (variant_id, quantity) VALUES
     (5, 9),
     (6, 27);
 
-
 -- ============================================================================
 -- Orders, payments and shipments
 -- ============================================================================
 
-INSERT INTO Orders (
-    customer_id,
-    delivery_address_id,
-    invoice_address_id,
-    order_status,
-    total_cost
-) VALUES
+INSERT INTO Orders (customer_id, delivery_address_id, invoice_address_id, order_status, total_cost) VALUES
     (1, 1, 2, 'delivered', 267.00),
     (2, 3, 4, 'paid', 258.00),
     (3, 5, 6, 'created', 89.00);
@@ -111,7 +124,7 @@ INSERT INTO Payments (order_id, payment_method, total_amount, payment_status, tr
     (2, 'stripe', 258.00, 'paid', 'TEST-STRIPE-0002'),
     (3, 'swish', 89.00, 'pending', 'TEST-SWISH-0003');
 
-INSERT INTO Shipments (order_id, carrier, tracking_number, status, shipped_date, delivered_date) VALUES
+INSERT INTO Shipments (order_id, carrier, tracking_number, shipment_status, shipped_date, delivered_date) VALUES
     (1, 'PostNord', 'TEST-PN-0001', 'delivered', '2026-09-22 09:30:00', '2026-09-24 14:15:00'),
     (2, 'DHL', 'TEST-DHL-0002', 'packed', NULL, NULL);
 
