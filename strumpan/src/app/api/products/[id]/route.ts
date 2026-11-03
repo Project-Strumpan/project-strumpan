@@ -16,7 +16,7 @@
 
 import { NextResponse } from "next/server";
 import { pool } from "@/lib/db";
-import type { ProductVariant, ProductWithVariants, CatalogueProduct } from "@/types/product";
+import type { ProductVariant, ProductWithVariants } from "@/types/product";
 
 type ProductRow = {
     product_id: number;
@@ -42,9 +42,9 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
 
     if (!Number.isSafeInteger(product_id) || product_id < 1) {
         return NextResponse.json(
-            { error: "Invalid order ID"},
+            { error: "Invalid product ID" },
             { status: 400 }
-        )
+        );
     }
 
     let connection;
@@ -112,34 +112,13 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
         };
 
         return NextResponse.json(product, { status: 200, })
-    } catch(error) {
-        // console.error("Failed to fetch product: ", error);
-
-        // return NextResponse.json( { error: "Failed to fetch product", }, { status: 500, } );
-
-        // TODO: This is a test response. Above is whenever true db connection is added.
-
-        const variant : ProductVariant = {
-            variant_id: 1,
-            size: "46",
-            color: "black",
-            sku: "1",
-            available_quantity: 1
-        }
-
-        const product : ProductWithVariants = {
-            product_id: product_id,
-            category_id: 1,
-            name: "Everyday Socks",
-            description: "Everyday socks, for everyday needs",
-            price: 12900,
-            image_url: "",
-            variants: [variant, variant]
-        };
-        return NextResponse.json(product);
+    } catch (error) {
+        console.error("Failed to fetch product", error);
+        return NextResponse.json(
+            { error: "Failed to fetch product" },
+            { status: 500 }
+        );
     } finally {
-        connection?.release
+        connection?.release();
     }
-
-    
 }
