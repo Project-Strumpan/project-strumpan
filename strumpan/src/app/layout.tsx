@@ -26,14 +26,13 @@ export default function RootLayout({ children, }: { children: React.ReactNode })
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <Providers>
-          <div className="flex-1">{children}</div>
-          <footer className="flex justify-center gap-4 border-t px-4 py-6 text-sm">
-            <Link href="/cookies" className="hover:underline">
-            Cookies
-            </Link>
-          </footer>
-        </Providers>
+        <div className="flex-1">{children}</div>
+        <footer className="flex justify-center gap-4 border-t px-4 py-6 text-sm">
+          <Link href="/about" className="hover:underline">Om oss</Link>
+          <Link href="/cookies" className="hover:underline">
+          Cookies
+          </Link>
+        </footer>
       </body>
     </html>
   );
