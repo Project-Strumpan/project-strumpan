@@ -1,7 +1,7 @@
 /*
  * GET endpoint for checking availability of a product
  * Author: Alan Tokarev
- * Date: 2026-10-04
+ * Date: 2026-11-03
  * Dependencies: next/server, @/lib/db -> mariadb, .env.local
  * 
  * Template request:
@@ -14,9 +14,8 @@
  * 
 */
 
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { pool } from "@/lib/db";
-import { demoOnly } from "@/lib/demo-only";
 
 type AvailabilityRow = {
     inventory_id: number;
@@ -29,15 +28,15 @@ type ProductIdRow = {
     product_id: number;
 }
 
-export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }>}) {
-    const disabled = demoOnly();
-    if (disabled) return disabled;
-
+export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
     const product_id = Number(id);
 
     if (!Number.isSafeInteger(product_id) || product_id < 1) {
-        return NextResponse.json( { error: "Invalid product_id", }, { status: 400, } );
+        return NextResponse.json(
+            { error: "Invalid product ID" },
+            { status: 400 }
+        );
     }
 
     let connection;
@@ -55,7 +54,10 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
         );
 
         if (productRows.length === 0) {
-            return NextResponse.json( { error: "Product not found", }, { status: 404, } );
+            return NextResponse.json(
+                { error: "Product not found" },
+                { status: 404 }
+            );
         }
 
         const availability = await connection.query<AvailabilityRow[]>(
@@ -85,21 +87,11 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
             { status: 200, }
         );
     } catch (error) {
-        // console.error("Failed to fetch product availability: ", error);
-
-        // return NextResponse.json( { error: "Failed to fetch product availability", }, { status: 500, } );
-
-        // TODO: This is a test response. Above is whenever true db connection is added.
-
-        const availability = {
-            inventory_id: product_id,
-            variant_id: 1,
-            quantity: 8,
-            last_updated: "2026-09-30T12:00:00.000Z",
-        };
-
-        return NextResponse.json(availability);
-
+        console.error("Failed to fetch product availability", error);
+        return NextResponse.json(
+            { error: "Failed to fetch product availability" },
+            { status: 500 }
+        );
     } finally {
         connection?.release();
     }
