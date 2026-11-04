@@ -1,6 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
-	ApiClientError,
 	createOrder,
 	getProduct,
 } from "./api-client";
@@ -115,7 +114,7 @@ describe("product and order client operations", () => {
 		);
 
 		await expect(getProduct(1)).rejects.toEqual(
-			expect.objectContaining<ApiClientError>({
+			expect.objectContaining({
 				name: "ApiClientError",
 				kind: "invalid-response",
 			})
