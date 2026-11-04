@@ -3,7 +3,8 @@ const productsArray = [
         id: "1",
         title: "Strumpa1",
         description: "strumpa1 är en produkt",
-        price: 20
+        price: 20,
+        stock: 50
     },
 ]
 
@@ -17,4 +18,4 @@ function getProductData(id: string) {
     return productData;
 }
 
-export { productsArray, getProductData };
+export { productsArray, getProductData }; 

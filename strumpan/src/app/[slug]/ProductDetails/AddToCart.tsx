@@ -10,13 +10,14 @@ type Product =
     title: string;
     description: string;
     price: number;
+    stock: number;
 };
 
 export default function AddToCart({ product }: {product: Product}){
     const cart = useContext(CartContext);
     const productQuantity = cart?.getProductQuantity(product.id);
     console.log("Adding", product.id, productQuantity);
-    if (typeof(cart) === undefined || typeof(productQuantity) === undefined) {
+    if (!cart || typeof(productQuantity) === undefined) {
         console.error("product or cart doesnt exist" +
             "cart status " + cart +
             "product status " + productQuantity
@@ -47,7 +48,9 @@ export default function AddToCart({ product }: {product: Product}){
                             </Button>
                         </Col>
                     </Form>
-                    <Button variant="danger" onClick={() => cart?.deleteFromCart(product.id)} className='my-2'></Button>
+                    <Button variant="danger" onClick={() => cart?.deleteFromCart(product.id)} className='my-2'>
+                        Remove from cart
+                    </Button>
                 </>
                 :
                 <Button onClick={() => cart?.addOneToCart(product.id)}>

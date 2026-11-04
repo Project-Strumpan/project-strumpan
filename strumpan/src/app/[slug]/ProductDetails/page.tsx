@@ -13,6 +13,7 @@ type Product =
     title: string;
     description: string;
     price: number;
+    stock: number;
 };
 export default async function ProductDetails({params, }: {
     params: Promise<{ slug: string }>;
@@ -34,19 +35,4 @@ export default async function ProductDetails({params, }: {
             </div>
         </div>
     )
-    // return (
-    //     <>
-    //     {productsArray.map((product, idx) => (
-    //         <div key={idx}>
-    //             <h1>{product.title}</h1>
-    //             <p>{product.description}</p>
-    //             <p>{product.price}</p>
-    //             <img src="https://images.unsplash.com/photo-1503602642458-232111445657?auto=format&fit=crop&w=700&q=80" alt={product.title}></img>
-
-    //             <Button variant="primary">Add To Cart</Button>
-    //         </div>
-    //     ))}
-            
-    //     </>
-    // )
 }
