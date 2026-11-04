@@ -1,7 +1,7 @@
 /*
  * POST endpoint for submitting checkout data
  * Author: Alan Tokarev
- * Date: 2026-10-05
+ * Date: 2026-11-03
  * Dependencies: next/server, @/lib/db -> mariadb, .env.local, @/types/order, @/types/auth
  * Returns: order_id, order_status, total_cost, items (each order item)
  *
@@ -21,16 +21,11 @@ type VariantRow = {
 
 type AddressRow = {
     address_id: number;
-
 };
 
 type InsertResult = {
     affected_rows: number;
     insert_id: number;
-};
-
-type InsertedOrderItemRow = {
-    order_item_id: number;
 };
 
 export async function POST( _request: NextRequest ) {
@@ -73,7 +68,7 @@ export async function POST( _request: NextRequest ) {
         const addressIds = new Set( addressRows.map( (address) => address.address_id ) );
 
         if (!addressIds.has(body.delivery_address_id) || !addressIds.has(body.invoice_address_id)) {
-            await connection.rollback;
+            await connection.rollback();
             return NextResponse.json( { error: "One or more addresses are invalid", }, { status: 400, } );
         }
 
