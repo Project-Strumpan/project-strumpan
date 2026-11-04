@@ -1,4 +1,4 @@
-import { getProduct } from "@/lib/api-client";
+import { getInventoryList } from "@/lib/api-client";
 import type { InventoryListResponse } from "@/types/inventory";
 
 export async function getInventory(): Promise<InventoryListResponse> {
@@ -6,55 +6,34 @@ export async function getInventory(): Promise<InventoryListResponse> {
     process.env.NODE_ENV === "development" &&
     process.env.NEXT_PUBLIC_INVENTORY_MOCKS === "true";
 
-  if (!useMocks) {
-    throw new Error(
-      "Inventory API integration is not configured yet. " +
-        "Enable inventory mocks for local development.",
+  // TEMPORARY: the API has no active flag, so the mock preview keeps
+  // isActive from mockInventory. Without mocks every row is treated as active.
+  let activeByVariant = new Map<number, boolean>();
+
+  if (useMocks) {
+    const { startInventoryMocking } = await import("@/mocks/browser");
+    await startInventoryMocking();
+
+    const { mockInventory } = await import("@/mocks/inventory");
+    activeByVariant = new Map(
+      mockInventory.map((item) => [item.variantId, item.isActive]),
     );
   }
 
-  const { startInventoryMocking } = await import("@/mocks/browser");
-  await startInventoryMocking();
-
-  const { mockInventory } = await import("@/mocks/inventory");
-
-  // Temporary product discovery for the mock preview only.
-  const productIds = [
-    ...new Set(mockInventory.map((item) => item.productId)),
-  ];
-
-  // Alan's unchanged client performs fetch and validates each response.
-  const products = await Promise.all(
-    productIds.map((productId) => getProduct(productId)),
-  );
+  // Throws ApiClientError on network/HTTP/invalid response. No mock fallback.
+  const { items } = await getInventoryList();
 
   return {
-    items: products.flatMap((product) =>
-      product.variants.map((variant) => {
-        const previewMetadata = mockInventory.find(
-          (item) =>
-            item.productId === product.product_id &&
-            item.variantId === variant.variant_id,
-        );
-
-        if (!previewMetadata) {
-          throw new Error("Missing mock metadata for inventory variant.");
-        }
-
-        return {
-          productId: product.product_id,
-          variantId: variant.variant_id,
-          productName: product.name,
-          sku: variant.sku,
-          size: variant.size,
-          color: variant.color,
-          quantity: variant.available_quantity,
-
-          // Not supplied by Alan's product endpoint yet.
-          isActive: previewMetadata.isActive,
-          lastUpdated: previewMetadata.lastUpdated,
-        };
-      }),
-    ),
+    items: items.map((item) => ({
+      productId: item.product_id,
+      variantId: item.variant_id,
+      productName: item.name,
+      sku: item.sku,
+      size: item.size,
+      color: item.color,
+      quantity: item.quantity,
+      isActive: activeByVariant.get(item.variant_id) ?? true,
+      lastUpdated: item.last_updated,
+    })),
   };
 }
