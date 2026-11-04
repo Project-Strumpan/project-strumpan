@@ -69,7 +69,7 @@ export async function GET(
         const orderRows = await connection.query<OrderRow[]>(
             `SELECT o.order_id, o.customer_id, o.delivery_address_id,
                     o.invoice_address_id, o.order_date,
-                    o.status AS order_status, o.total_cost
+                    o.order_status, o.total_cost
              FROM Orders AS o
              WHERE o.order_id = ? AND o.customer_id = ?`,
             [order_id, user.customer_id]

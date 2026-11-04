@@ -30,10 +30,10 @@ export async function GET() {
             SELECT 
                 product_id,
                 category_id,
-                name,
-                description,
+                product_name AS name,
+                product_description AS description,
                 price,
-                image_url
+                picture_url AS image_url
             FROM Products
             ORDER BY product_id ASC
             `

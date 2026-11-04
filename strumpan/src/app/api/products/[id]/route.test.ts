@@ -67,7 +67,12 @@ describe("GET /api/products/[id]", () => {
 		});
 		expect(connection.query).toHaveBeenNthCalledWith(
 			1,
-			expect.stringContaining("WHERE product_id = ?"),
+			expect.stringContaining("product_name AS name"),
+			[1]
+		);
+		expect(connection.query).toHaveBeenNthCalledWith(
+			2,
+			expect.stringContaining("pv.product_variant_size AS size"),
 			[1]
 		);
 		expect(connection.query).toHaveBeenNthCalledWith(

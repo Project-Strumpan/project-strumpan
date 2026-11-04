@@ -57,10 +57,10 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
             SELECT 
                 product_id,
                 category_id,
-                name,
-                description,
+                product_name AS name,
+                product_description AS description,
                 price,
-                image_url
+                picture_url AS image_url
             FROM Products
             WHERE product_id = ?
             `,
@@ -75,7 +75,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
             `
             SELECT
                 pv.variant_id,
-                pv.size,
+                pv.product_variant_size AS size,
                 pv.color,
                 pv.sku,
                 COALESCE(i.quantity, 0)

@@ -37,7 +37,13 @@ describe("GET /api/products", () => {
 		expect(response.status).toBe(200);
 		expect(await response.json()).toEqual(products);
 		expect(connection.query).toHaveBeenCalledWith(
-			expect.stringContaining("SELECT")
+			expect.stringContaining("product_name AS name")
+		);
+		expect(connection.query).toHaveBeenCalledWith(
+			expect.stringContaining("product_description AS description")
+		);
+		expect(connection.query).toHaveBeenCalledWith(
+			expect.stringContaining("picture_url AS image_url")
 		);
 		expect(connection.query).toHaveBeenCalledWith(
 			expect.stringContaining("ORDER BY product_id ASC")
