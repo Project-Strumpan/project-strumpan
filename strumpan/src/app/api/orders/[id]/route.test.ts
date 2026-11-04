@@ -77,6 +77,11 @@ describe("GET /api/orders/[id]", () => {
 		});
 		expect(connection.query).toHaveBeenNthCalledWith(
 			1,
+			expect.stringContaining("o.order_status"),
+			[100, 7]
+		);
+		expect(connection.query).toHaveBeenNthCalledWith(
+			1,
 			expect.stringContaining("o.customer_id = ?"),
 			[100, 7]
 		);
