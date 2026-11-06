@@ -1,18 +1,19 @@
+import { useContext, useState} from "react";
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { CartProvider, CartContext } from "./CartContext";
-import { useContext } from "react";
 import "@testing-library/jest-dom/vitest";
 import { cleanup } from "@testing-library/react";
 import { afterEach } from "vitest";
+
+import { CartProvider, CartContext } from "./CartContext";
 
 // Mock product data used for calculating the total cost
 vi.mock("../productsStore", () => ({
     getProductData: (id: string) => {
         const products = [
-            { id: "1", title: "Product 1", price: 100 },
-            { id: "2", title: "Product 2", price: 200 },
+            { id: "1", title: "Product 1", price: 100, stock: 5 },
+            { id: "2", title: "Product 2", price: 200, stock: 10},
         ];
 
         return products.find(product => product.id === id);
@@ -62,6 +63,32 @@ function TestComponent() {
     );
 }
 
+function NavigationTest() {
+    const [page, setPage] = useState("product");
+
+    const cart = useContext(CartContext);
+
+    if (!cart) return null;
+
+    return (
+        <div>
+            <button onClick={() => setPage("another")}>
+                Navigate to another page
+            </button>
+
+            <button onClick={() => cart.addOneToCart("1")}>
+                Add product
+            </button>
+
+            <p data-testid="current-page">{page}</p>
+
+            <p data-testid="cart-quantity">
+                {cart.getProductQuantity("1")}
+            </p>
+        </div>
+    );
+}
+
 function renderCart() {
     return render(
         <CartProvider>
@@ -102,6 +129,7 @@ describe("CartContext", () => {
 
         renderCart();
 
+        // add two
         await user.click(screen.getByRole("button", { name: "Add product 1" }));
         await user.click(screen.getByRole("button", { name: "Add product 1" }));
 
@@ -113,9 +141,11 @@ describe("CartContext", () => {
 
         renderCart();
 
+        // adds two
         await user.click(screen.getByRole("button", { name: "Add product 1" }));
         await user.click(screen.getByRole("button", { name: "Add product 1" }));
 
+        // remove one
         await user.click(
             screen.getByRole("button", { name: "Remove one product 1" })
         );
@@ -128,8 +158,10 @@ describe("CartContext", () => {
 
         renderCart();
 
+        // add a product
         await user.click(screen.getByRole("button", { name: "Add product 1" }));
 
+        // decrease quantity by one
         await user.click(
             screen.getByRole("button", { name: "Remove one product 1" })
         );
@@ -143,8 +175,10 @@ describe("CartContext", () => {
 
         renderCart();
 
+        // add a product
         await user.click(screen.getByRole("button", { name: "Add product 1" }));
 
+        // remove the product
         await user.click(
             screen.getByRole("button", { name: "Delete product 1" })
         );
@@ -177,5 +211,47 @@ describe("CartContext", () => {
 
         // 2 * 100 + 1 * 200 = 400
         expect(screen.getByTestId("total-cost")).toHaveTextContent("400");
+    });
+    it("should not allow adding more products than available stock", async () => {
+    const user = userEvent.setup();
+
+    renderCart();
+
+    // Product 1 has a stock limit of 5 in this test
+    for (let i = 0; i < 6; i++) {
+        await user.click(
+            screen.getByRole("button", { name: "Add product 1" })
+        );
+    }
+
+    expect(screen.getByTestId("quantity-1")).toHaveTextContent("5");
+    });
+
+
+    it("Items persist across different pages of the website", async () => {
+        const user = userEvent.setup();
+
+        render(
+            <CartProvider>
+                <NavigationTest />
+            </CartProvider>
+        );
+
+        // Add product to cart on first page
+        await user.click(
+            screen.getByRole("button", { name: /add to cart/i })
+        );
+
+        expect(screen.getByText("In Cart: 1")).toBeInTheDocument();
+
+        // Navigate to another page
+        await user.click(
+            screen.getByRole("button", {
+                name: /navigate to another page/i,
+            })
+        );
+
+        // Cart should still contain the product
+        expect(screen.getByText("In Cart: 1")).toBeInTheDocument();
     });
 });

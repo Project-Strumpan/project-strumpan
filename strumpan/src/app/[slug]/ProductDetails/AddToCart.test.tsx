@@ -1,12 +1,12 @@
 import { describe, it, expect} from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import AddToCart from "./AddToCart";
-import { CartProvider } from "@/app/CartContext";
 import '@testing-library/jest-dom/vitest';
-
 import { cleanup } from "@testing-library/react";
 import { afterEach } from "vitest";
+
+import AddToCart from "./AddToCart";
+import { CartProvider } from "@/app/CartContext";
 
 const product = {
     id: "1",
@@ -46,7 +46,7 @@ describe("AddToCart", () => {
         ).not.toBeInTheDocument();
     });
 
-    it("should show quantity buttons after pressing Add to cart", async () => {
+    it("Buttons to change the quantity of the product should show when add to cart is pressed once", async () => {
         const user = userEvent.setup();
 
         renderComponent();
@@ -64,7 +64,7 @@ describe("AddToCart", () => {
         ).toBeInTheDocument();
     });
 
-    it("should increase the quantity when pressing plus", async () => {
+    it("The customer should be able to add the quantity of a product that is available in the stock", async () => {
         const user = userEvent.setup();
 
         renderComponent();
@@ -80,7 +80,7 @@ describe("AddToCart", () => {
         expect(screen.getByText("In Cart: 2")).toBeInTheDocument();
     });
 
-    it("should decrease the quantity when pressing minus", async () => {
+    it("The customer should be able to decrease the quantity of product to be added to the cart", async () => {
         const user = userEvent.setup();
 
         renderComponent();
@@ -100,7 +100,7 @@ describe("AddToCart", () => {
         expect(screen.getByText("In Cart: 1")).toBeInTheDocument();
     });
  
-    it("should show Add to cart again when quantity reaches zero", async () => {
+    it("Buttons to change the quantity of the product shouldn’t be visible upon opening the page", async () => {
         const user = userEvent.setup();
 
         renderComponent();

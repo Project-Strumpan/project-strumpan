@@ -35,6 +35,12 @@ export function CartProvider({children}: {children: ReactNode}) {
 
     function addOneToCart(id: string){
         const quantity = getProductQuantity(id);
+
+        const productData = getProductData(id);
+        if (!productData) return;
+
+        if (quantity >= productData.stock) return;
+
         if (quantity === 0){
             setCartProducts([
                 ...cartProducts, 
