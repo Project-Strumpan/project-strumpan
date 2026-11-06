@@ -1,5 +1,11 @@
 import type { CreateOrderRequest, CreateOrderResponse } from "@/types/order";
 import type { ProductWithVariants } from "@/types/product";
+import { isInventoryAvailability } from "@/types/inventory-api";
+import type {
+	InventoryApiQuery,
+	InventoryApiResponse,
+} from "@/types/inventory-api";
+
 
 export type ApiClientErrorKind = "network" | "http" | "invalid-response";
 
@@ -158,4 +164,47 @@ function isPositiveInteger(value: unknown): value is number {
 
 function isNonNegativeInteger(value: unknown): value is number {
 	return typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
+}
+
+
+export async function getInventoryList(
+	query: InventoryApiQuery = {}
+): Promise<InventoryApiResponse> {
+	const params = new URLSearchParams();
+	if (query.search) params.set("search", query.search);
+	if (query.color) params.set("color", query.color);
+	if (query.size) params.set("size", query.size);
+	if (query.availability) params.set("availability", query.availability);
+
+	const qs = params.toString();
+	return requestJson<InventoryApiResponse>(
+		qs ? `/api/inventory?${qs}` : "/api/inventory",
+		isInventoryApiResponse
+	);
+}
+
+function isInventoryApiResponse(value: unknown): value is InventoryApiResponse {
+	if (!isRecord(value)) return false;
+
+	return (
+		isNonNegativeInteger(value.total) &&
+		Array.isArray(value.items) &&
+		value.items.every(isInventoryApiItem)
+	);
+}
+
+function isInventoryApiItem(value: unknown): boolean {
+	if (!isRecord(value)) return false;
+
+	return (
+		isPositiveInteger(value.product_id) &&
+		isPositiveInteger(value.variant_id) &&
+		typeof value.name === "string" &&
+		typeof value.sku === "string" &&
+		(value.color === null || typeof value.color === "string") &&
+		typeof value.size === "string" &&
+		isNonNegativeInteger(value.quantity) &&
+		(value.last_updated === null || typeof value.last_updated === "string") &&
+		isInventoryAvailability(value.availability)
+	);
 }
