@@ -6,7 +6,6 @@ export type InventoryItem = {
     size: string;
     color: string | null;
     quantity: number;
-    isActive: boolean;
     lastUpdated: string | null;
 }
 

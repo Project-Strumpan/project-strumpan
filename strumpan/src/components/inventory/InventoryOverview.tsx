@@ -231,7 +231,6 @@ export default function InventoryOverview() {
                     <th scope="col" className="px-4 py-3">Colour</th>
                     <th scope="col" className="px-4 py-3">Size</th>
                     <th scope="col" className="px-4 py-3 text-right">Quantity</th>
-                    <th scope="col" className="px-4 py-3">Status</th>
                   </tr>
                 </thead>
 
@@ -258,17 +257,6 @@ export default function InventoryOverview() {
                             Out of stock
                           </span>
                         )}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={
-                            item.isActive
-                              ? "text-emerald-300"
-                              : "text-zinc-400"
-                          }
-                        >
-                          {item.isActive ? "Active" : "Inactive"}
-                        </span>
                       </td>
                     </tr>
                   ))}
