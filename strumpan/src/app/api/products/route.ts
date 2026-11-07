@@ -19,8 +19,6 @@ import { pool } from "@/lib/db";
 
 import type { CatalogueProduct } from "@/types/product";
 
-import type { CatalogueProduct } from "@/types/product";
-
 export async function GET() {
     let connection;
 

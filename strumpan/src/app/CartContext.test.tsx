@@ -212,6 +212,7 @@ describe("CartContext", () => {
         // 2 * 100 + 1 * 200 = 400
         expect(screen.getByTestId("total-cost")).toHaveTextContent("400");
     });
+
     it("should not allow adding more products than available stock", async () => {
     const user = userEvent.setup();
 
@@ -228,30 +229,30 @@ describe("CartContext", () => {
     });
 
 
-    it("Items persist across different pages of the website", async () => {
-        const user = userEvent.setup();
+    it("should preserve cart contents when navigating between pages", async () => {
+    const user = userEvent.setup();
 
-        render(
-            <CartProvider>
-                <NavigationTest />
-            </CartProvider>
-        );
+    render(
+        <CartProvider>
+            <NavigationTest />
+        </CartProvider>
+    );
 
-        // Add product to cart on first page
-        await user.click(
-            screen.getByRole("button", { name: /add to cart/i })
-        );
+    // Add product to cart
+    await user.click(
+        screen.getByRole("button", { name: "Add product" })
+    );
 
-        expect(screen.getByText("In Cart: 1")).toBeInTheDocument();
+    expect(screen.getByTestId("cart-quantity")).toHaveTextContent("1");
 
-        // Navigate to another page
-        await user.click(
-            screen.getByRole("button", {
-                name: /navigate to another page/i,
-            })
-        );
+    // Navigate to another page
+    await user.click(
+        screen.getByRole("button", { name: "Navigate to another page" })
+    );
 
-        // Cart should still contain the product
-        expect(screen.getByText("In Cart: 1")).toBeInTheDocument();
-    });
+    expect(screen.getByTestId("current-page")).toHaveTextContent("another");
+
+    // Verify cart contents are preserved
+    expect(screen.getByTestId("cart-quantity")).toHaveTextContent("1");
+});
 });
