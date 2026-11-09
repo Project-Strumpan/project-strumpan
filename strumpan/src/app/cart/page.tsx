@@ -1,27 +1,11 @@
+"use client"
 import React from "react";
-
-const cartItems = [
-  {
-    id: 1,
-    name: "Minimalist Chair",
-    description: "Oak / Natural",
-    price: 249,
-    quantity: 1,
-    image:
-      "https://images.unsplash.com/photo-1503602642458-232111445657?auto=format&fit=crop&w=300&q=80",
-  },
-  {
-    id: 2,
-    name: "Ceramic Table Lamp",
-    description: "White / Medium",
-    price: 89,
-    quantity: 2,
-    image:
-      "https://images.unsplash.com/photo-1507473885765-e6ed057f782c?auto=format&fit=crop&w=300&q=80",
-  },
-];
+import { useContext } from "react"
+import { CartContext } from "@/app/CartContext";
 
 export default function CartPage() {
+  const cart = useContext(CartContext);
+  let cartItems = cart!.items;
   const subtotal = cartItems.reduce(
     (total, item) => total + item.price * item.quantity,
     0
@@ -62,8 +46,8 @@ export default function CartPage() {
                 >
                   {/* Image */}
                   <img
-                    src={item.image}
-                    alt={item.name}
+                    src={item.picture_url}
+                    alt={item.product_name}
                     className="h-24 w-24 rounded-xl object-cover sm:h-28 sm:w-28"
                   />
 
@@ -72,10 +56,10 @@ export default function CartPage() {
                     <div className="flex justify-between gap-4">
                       <div>
                         <h3 className="font-medium text-gray-900">
-                          {item.name}
+                          {item.product_name}
                         </h3>
                         <p className="mt-1 text-sm text-gray-500">
-                          {item.description}
+                          {item.product_description}
                         </p>
                       </div>
 
@@ -89,7 +73,7 @@ export default function CartPage() {
                       <div className="flex items-center rounded-lg border border-gray-200">
                         <button
                           className="flex h-8 w-8 items-center justify-center text-gray-500 transition hover:bg-gray-50 hover:text-gray-900"
-                          aria-label="Decrease quantity"
+                          aria-label="Decrease quantity" onClick={() => cart!.removeOneFromCart(item.id)}
                         >
                           −
                         </button>
@@ -100,13 +84,13 @@ export default function CartPage() {
 
                         <button
                           className="flex h-8 w-8 items-center justify-center text-gray-500 transition hover:bg-gray-50 hover:text-gray-900"
-                          aria-label="Increase quantity"
+                          aria-label="Increase quantity" onClick={() => cart!.addOneToCart(item.id)}
                         >
                           +
                         </button>
                       </div>
 
-                      <button className="text-sm font-medium text-gray-500 transition hover:text-red-600">
+                      <button className="text-sm font-medium text-gray-500 transition hover:text-red-600" onClick={() => cart!.deleteFromCart(item.id)}>
                         Remove
                       </button>
                     </div>

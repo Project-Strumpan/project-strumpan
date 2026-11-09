@@ -9,7 +9,7 @@ import AddToCart from "./AddToCart";
 import { CartProvider } from "@/app/CartContext";
 
 const product = {
-    id: "1",
+    id: 1,
     title: "Test product",
     description: "Test description",
     price: 100,
