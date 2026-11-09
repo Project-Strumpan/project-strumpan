@@ -1,4 +1,4 @@
-import { productsArray } from '../../../productsStore';
+import { productsArray } from '@/productsStore';
 import { Button, Form, Row, Col } from 'react-bootstrap';
 import AddToCart from './AddToCart';
 import Link from 'next/link';

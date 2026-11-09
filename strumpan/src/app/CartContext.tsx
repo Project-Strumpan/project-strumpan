@@ -1,19 +1,28 @@
 "use client"
 
 import { createContext, useState, ReactNode } from "react";
-import { getProductData, productsArray } from "../productsStore"
+import { getProductData } from "../productsStore"
 
 type CartItem = {
-        id: string;
-        quantity: number;
-    };
+    id: number,
+    quantity: number,
+    category_id: number,
+    product_name: string,
+    product_description: string,
+    price: number,
+    picture_url: string,
+    origin: string,
+    material: string,
+    environmental_labels: string,
+    created_date: Date,
+};
 
 type CartContextType = {
   items: CartItem[];
-  getProductQuantity: (id: string) => number;
-  addOneToCart: (id: string) => void;
-  removeOneFromCart: (id: string) => void;
-  deleteFromCart: (id: string) => void;
+  getProductQuantity: (id: number) => number;
+  addOneToCart: (id: number) => void;
+  removeOneFromCart: (id: number) => void;
+  deleteFromCart: (id: number) => void;
   getTotalCost: () => number;
 };
 
@@ -23,7 +32,7 @@ export function CartProvider({children}: {children: ReactNode}) {
     
     const [cartProducts, setCartProducts] = useState<CartItem[]>([])
 
-    function getProductQuantity(id: string) {
+    function getProductQuantity(id: number) {
         const quantity = cartProducts.find(product => product.id === id)?.quantity
 
         if (quantity === undefined){
@@ -33,7 +42,7 @@ export function CartProvider({children}: {children: ReactNode}) {
         return quantity
     }
 
-    function addOneToCart(id: string){
+    function addOneToCart(id: number){
         const quantity = getProductQuantity(id);
 
         const productData = getProductData(id);
@@ -46,7 +55,8 @@ export function CartProvider({children}: {children: ReactNode}) {
                 ...cartProducts, 
                 {
                     id: id,
-                    quantity: 1
+                    quantity: 1,
+                    ...productData
                 }
             ])
         }
@@ -62,7 +72,7 @@ export function CartProvider({children}: {children: ReactNode}) {
         }
     }
 
-    function removeOneFromCart(id: string) {
+    function removeOneFromCart(id: number) {
         const quantity = getProductQuantity(id);
 
         if (quantity == 1){
@@ -90,7 +100,7 @@ export function CartProvider({children}: {children: ReactNode}) {
         return totalCost;
     }
 
-    function deleteFromCart(id: string) {
+    function deleteFromCart(id: number) {
         setCartProducts(
             cartProducts =>
             cartProducts.filter(product => {
@@ -104,7 +114,7 @@ export function CartProvider({children}: {children: ReactNode}) {
         items: cartProducts,
         getProductQuantity,
         addOneToCart,
-        removeOneFromCart,
+        removeOneFromCart: removeOneFromCart,
         deleteFromCart,
         getTotalCost
     }

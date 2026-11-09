@@ -10,10 +10,10 @@ import { CartProvider, CartContext } from "./CartContext";
 
 // Mock product data used for calculating the total cost
 vi.mock("../productsStore", () => ({
-    getProductData: (id: string) => {
+    getProductData: (id: number) => {
         const products = [
-            { id: "1", title: "Product 1", price: 100, stock: 5 },
-            { id: "2", title: "Product 2", price: 200, stock: 10},
+            { id: 1, title: "Product 1", price: 100, stock: 5 },
+            { id: 2, title: "Product 2", price: 200, stock: 10},
         ];
 
         return products.find(product => product.id === id);
@@ -29,11 +29,11 @@ function TestComponent() {
     return (
         <div>
             <p data-testid="quantity-1">
-                {cart.getProductQuantity("1")}
+                {cart.getProductQuantity(1)}
             </p>
 
             <p data-testid="quantity-2">
-                {cart.getProductQuantity("2")}
+                {cart.getProductQuantity(2)}
             </p>
 
             <p data-testid="total-cost">
@@ -44,19 +44,19 @@ function TestComponent() {
                 {cart.items.length}
             </p>
 
-            <button onClick={() => cart.addOneToCart("1")}>
+            <button onClick={() => cart.addOneToCart(1)}>
                 Add product 1
             </button>
 
-            <button onClick={() => cart.addOneToCart("2")}>
+            <button onClick={() => cart.addOneToCart(2)}>
                 Add product 2
             </button>
 
-            <button onClick={() => cart.removeOneFromCart("1")}>
+            <button onClick={() => cart.removeOneFromCart(1)}>
                 Remove one product 1
             </button>
 
-            <button onClick={() => cart.deleteFromCart("1")}>
+            <button onClick={() => cart.deleteFromCart(1)}>
                 Delete product 1
             </button>
         </div>
@@ -76,14 +76,14 @@ function NavigationTest() {
                 Navigate to another page
             </button>
 
-            <button onClick={() => cart.addOneToCart("1")}>
+            <button onClick={() => cart.addOneToCart(1)}>
                 Add product
             </button>
 
             <p data-testid="current-page">{page}</p>
 
             <p data-testid="cart-quantity">
-                {cart.getProductQuantity("1")}
+                {cart.getProductQuantity(1)}
             </p>
         </div>
     );

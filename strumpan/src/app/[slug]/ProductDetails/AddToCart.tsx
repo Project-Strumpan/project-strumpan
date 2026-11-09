@@ -6,7 +6,7 @@ import { CartContext } from "@/app/CartContext";
 
 type Product = 
     {
-    id: string;
+    id: number;
     title: string;
     description: string;
     price: number;
