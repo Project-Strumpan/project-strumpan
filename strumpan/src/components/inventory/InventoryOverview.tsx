@@ -1,13 +1,19 @@
 // En variant visas bara om den matchar samtliga valda villkor. Ett tomt filter betyder ”visa alla”.
 
+
 "use client";
 
+
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { getInventory } from "@/lib/inventory/client";
 import type { InventoryItem } from "@/types/inventory";
+import StockEditor from "./StockEditor";
+
 
 const controlClass =
   "w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-zinc-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400";
+
 
 export default function InventoryOverview() {
   const [items, setItems] = useState<InventoryItem[]>([]);
@@ -15,20 +21,25 @@ export default function InventoryOverview() {
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
 
+
   const [search, setSearch] = useState("");
   const [color, setColor] = useState("");
   const [size, setSize] = useState("");
   const [stock, setStock] = useState("");
 
+
   useEffect(() => {
     let cancelled = false;
+
 
     async function loadInventory() {
       setLoading(true);
       setError(null);
 
+
       try {
         const response = await getInventory();
+
 
         if (!cancelled) {
           setItems(response.items);
@@ -44,12 +55,15 @@ export default function InventoryOverview() {
       }
     }
 
+
     void loadInventory();
+
 
     return () => {
       cancelled = true;
     };
   }, [reloadKey]);
+
 
   const colors = Array.from(
     new Set(
@@ -59,27 +73,34 @@ export default function InventoryOverview() {
     ),
   ).sort();
 
+
   const sizes = Array.from(
     new Set(items.map((item) => item.size)),
   ).sort();
 
+
   const query = search.trim().toLowerCase();
+
 
   const filteredItems = items.filter((item) => {
     const matchesSearch =
       item.productName.toLowerCase().includes(query) ||
       item.sku.toLowerCase().includes(query);
 
+
     const matchesColor = color === "" || item.color === color;
     const matchesSize = size === "" || item.size === size;
+
 
     const matchesStock =
       stock === "" ||
       (stock === "in-stock" && item.quantity > 0) ||
       (stock === "out-of-stock" && item.quantity === 0);
 
+
     return matchesSearch && matchesColor && matchesSize && matchesStock;
   });
+
 
   function resetFilters() {
     setSearch("");
@@ -88,25 +109,26 @@ export default function InventoryOverview() {
     setStock("");
   }
 
+
   return (
     <main>
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold">Inventory</h1>
-        <p className="mt-2 text-zinc-400">
-          View stock levels by product variant, colour and size.
-        </p>
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold">Inventory</h1>
+          <p className="mt-2 text-zinc-400">
+            View and manage stock levels by product variant, colour and size.
+          </p>
+        </div>
+
+
+        <Link
+          href="/admin/inventory/products/new"
+          className="rounded bg-emerald-600 px-4 py-2 text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300"
+        >
+          Add product
+        </Link>
       </div>
 
-      <aside
-        aria-label="Development notice"
-        className="mb-6 rounded-lg border border-amber-500 bg-amber-950 p-4 text-amber-100"
-      >
-        <p className="font-semibold">Development preview — mock data</p>
-        <p className="mt-1 text-sm">
-          This page uses fictional data. API integration and access control
-          are not implemented in this preview. No changes can be saved.
-        </p>
-      </aside>
 
       {loading ? (
         <p role="status" className="py-8 text-zinc-300">
@@ -144,6 +166,7 @@ export default function InventoryOverview() {
               />
             </div>
 
+
             <div>
               <label htmlFor="inventory-color" className="mb-2 block text-sm">
                 Colour
@@ -162,6 +185,7 @@ export default function InventoryOverview() {
                 ))}
               </select>
             </div>
+
 
             <div>
               <label htmlFor="inventory-size" className="mb-2 block text-sm">
@@ -182,6 +206,7 @@ export default function InventoryOverview() {
               </select>
             </div>
 
+
             <div>
               <label htmlFor="inventory-stock" className="mb-2 block text-sm">
                 Stock availability
@@ -199,10 +224,12 @@ export default function InventoryOverview() {
             </div>
           </div>
 
+
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <p role="status" className="text-sm text-zinc-400">
               Showing {filteredItems.length} of {items.length} variants
             </p>
+
 
             <button
               type="button"
@@ -212,6 +239,7 @@ export default function InventoryOverview() {
               Reset filters
             </button>
           </div>
+
 
           {filteredItems.length === 0 ? (
             <p className="rounded-lg border border-zinc-800 p-6 text-zinc-300">
@@ -224,6 +252,7 @@ export default function InventoryOverview() {
                   Inventory quantities for each product variant
                 </caption>
 
+
                 <thead className="bg-zinc-900 text-zinc-300">
                   <tr>
                     <th scope="col" className="px-4 py-3">Product</th>
@@ -231,8 +260,10 @@ export default function InventoryOverview() {
                     <th scope="col" className="px-4 py-3">Colour</th>
                     <th scope="col" className="px-4 py-3">Size</th>
                     <th scope="col" className="px-4 py-3 text-right">Quantity</th>
+                    <th scope="col" className="px-4 py-3">Actions</th>
                   </tr>
                 </thead>
+
 
                 <tbody>
                   {filteredItems.map((item) => (
@@ -258,6 +289,21 @@ export default function InventoryOverview() {
                           </span>
                         )}
                       </td>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-wrap items-start gap-2">
+                          <StockEditor
+                            item={item}
+                            onSaved={() => setReloadKey((value) => value + 1)}
+                          />
+                          <Link
+                            href={`/admin/inventory/products/${item.productId}`}
+                            className="rounded border border-zinc-600 px-3 py-1 hover:bg-zinc-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400"
+                          >
+                            Edit product
+                            <span className="sr-only"> {item.productName}</span>
+                          </Link>
+                        </div>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -266,11 +312,6 @@ export default function InventoryOverview() {
           )}
         </>
       )}
-
-      <p className="mt-6 text-sm text-zinc-400">
-        Stock editing and product management will be added in PRO-71 and
-        PRO-73.
-      </p>
     </main>
   );
 }
