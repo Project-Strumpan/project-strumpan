@@ -1,6 +1,7 @@
 "use client";
 
-import { CartProvider } from "@/app/CartContext";
+import React from "react";
+import { CartProvider } from "@/context/CartContext";
 
 export default function Providers({
   children,
@@ -9,3 +10,5 @@ export default function Providers({
 }) {
   return <CartProvider>{children}</CartProvider>;
 }
+
+export { Providers };
