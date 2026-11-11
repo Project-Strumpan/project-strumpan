@@ -142,6 +142,7 @@ Om `code` inte känns igen kan du öppna VS Code manuellt och välja **File → 
 | `npm run build` | Bygger en produktionsversion och hittar många byggfel |
 | `npm run start` | Startar den byggda produktionsversionen efter `npm run build` |
 | `npm run lint` | Kontrollerar kod med ESLint |
+| `npm test` | Kör automatiserade enhets- och integrationstester |
 | `git pull` | Hämtar och applicerar senaste ändringarna från GitHub |
 | `git status` | Visar lokala ändringar och aktuell Git-status |
 
