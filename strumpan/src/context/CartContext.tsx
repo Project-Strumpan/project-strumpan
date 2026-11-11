@@ -56,34 +56,41 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const [items, setItems] = useState<CartItem[]>(() => {
-    if (typeof window === "undefined") {
-      return [];
-    }
+  const [items, setItems] = useState<CartItem[]>([]);
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  const [selectedCountry, setSelectedCountry] = useState<string>("SE");
+
+  // Läs den sparade varukorgen efter att klienten har monterats. Detta undviker
+  // att SSR:s tomma initialvärde skriver över en befintlig varukorg.
+  useEffect(() => {
     try {
       const stored = localStorage.getItem("strumpan_cart");
       if (stored) {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed)) {
-          return parsed;
+          setItems(parsed);
         }
       }
-    } catch {
-      // Ignorera fel vid parsing
+    } catch (err) {
+      console.error("Kunde inte läsa varukorg från localStorage:", err);
+    } finally {
+      setIsHydrated(true);
     }
-    return [];
-  });
+  }, []);
 
-  const [selectedCountry, setSelectedCountry] = useState<string>("SE");
-
-  // Spara varukorgen till localStorage vid ändringar
+  // Spara varukorgen till localStorage först efter att den har lästs in.
   useEffect(() => {
+    if (!isHydrated) {
+      return;
+    }
+
     try {
       localStorage.setItem("strumpan_cart", JSON.stringify(items));
     } catch (err) {
       console.error("Kunde inte spara varukorg i localStorage:", err);
     }
-  }, [items]);
+  }, [items, isHydrated]);
 
   const pricing = useMemo(() => {
     return calculateOrderPricing(items, selectedCountry);
