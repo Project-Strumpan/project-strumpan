@@ -2,16 +2,22 @@
 
 import { Button, Form, Row, Col } from 'react-bootstrap';
 import { useContext } from "react"
-import { CartContext } from "@/app/CartContext";
+import { CartContext, Product } from "@/app/CartContext";
 
-type Product = 
-    {
-    id: number;
-    title: string;
-    description: string;
-    price: number;
-    stock: number;
-};
+// export type Product = {
+//     id: number,
+//     quantity: number,
+//     category_id: number,
+//     product_name: string,
+//     product_description: string,
+//     price: number,
+//     stock: number,
+//     picture_url: string,
+//     origin: string,
+//     material: string,
+//     env_labels: string,
+//     created_date: Date,
+// };
 
 export default function AddToCart({ product }: {product: Product}){
     const cart = useContext(CartContext);
