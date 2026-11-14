@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import type { CatalogueProduct, ProductVariant } from "@/types/product";
+import type { CatalogueProduct, ProductVariant, ProductWithVariants } from "@/types/product";
 
 type CatalogProductItem = CatalogueProduct & {
   variants?: ProductVariant[];
@@ -14,6 +14,9 @@ export default function ProductCatalog() {
   const [maxPrice, setMaxPrice] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  
+  // Håll koll på vilka produkt-ID:n vars bilder misslyckats med att ladda
+  const [imageErrors, setImageErrors] = useState<Record<number, boolean>>({});
 
   useEffect(() => {
     async function loadCatalogData() {
@@ -25,13 +28,13 @@ export default function ProductCatalog() {
         const productsWithVariants = await Promise.all(
           baseProducts.map(async (product: CatalogueProduct) => {
             try {
-              const varRes = await fetch(`/api/products/${product.product_id}/variants`);
-              if (varRes.ok) {
-                const variants: ProductVariant[] = await varRes.json();
-                return { ...product, variants };
+              const detailRes = await fetch(`/api/products/${product.product_id}`);
+              if (detailRes.ok) {
+                const detail: ProductWithVariants = await detailRes.json();
+                return { ...product, variants: detail.variants };
               }
             } catch {
-              // Ignorera om varianter misslyckas
+              // Ignorera om detaljhämtning misslyckas
             }
             return { ...product, variants: [] };
           })
@@ -47,6 +50,16 @@ export default function ProductCatalog() {
 
     loadCatalogData();
   }, []);
+
+  const availableSizes = useMemo(() => {
+    const sizes = new Set<string>();
+    products.forEach((p) => {
+      p.variants?.forEach((v) => {
+        if (v.size) sizes.add(v.size);
+      });
+    });
+    return Array.from(sizes).sort();
+  }, [products]);
 
   const filteredProducts = useMemo(() => {
     return products.filter((product: CatalogProductItem) => {
@@ -102,12 +115,11 @@ export default function ProductCatalog() {
             className="w-full rounded-lg border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
           >
             <option value="">Alla storlekar</option>
-            <option value="39-42">39-42</option>
-            <option value="43-46">43-46</option>
-            <option value="S">S</option>
-            <option value="M">M</option>
-            <option value="L">L</option>
-            <option value="XL">XL</option>
+            {availableSizes.map((size) => (
+              <option key={size} value={size}>
+                {size}
+              </option>
+            ))}
           </select>
         </div>
 
@@ -160,6 +172,8 @@ export default function ProductCatalog() {
               new Set(product.variants?.map((v: ProductVariant) => v.size) || [])
             );
 
+            const hasImageError = imageErrors[product.product_id];
+
             return (
               <Link
                 key={product.product_id}
@@ -167,17 +181,23 @@ export default function ProductCatalog() {
                 className="group flex flex-col justify-between rounded-xl border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md hover:border-indigo-500 dark:hover:border-indigo-500"
               >
                 <div>
-                  {/* Valfri bild med standard <img> och fallback om den saknas */}
+                  {/* Bildruta som visar bild om den finns och fungerar, annars "Bild saknas" */}
                   <div className="relative w-full h-48 mb-4 overflow-hidden rounded-lg bg-gray-100 dark:bg-zinc-800 flex items-center justify-center">
-                    {product.image_url ? (
+                    {product.image_url && !hasImageError ? (
                       <img
                         src={product.image_url}
                         alt={product.name}
+                        onError={() => {
+                          setImageErrors((prev) => ({
+                            ...prev,
+                            [product.product_id]: true,
+                          }));
+                        }}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                       />
                     ) : (
                       <span className="text-xs text-gray-400 dark:text-gray-500 font-medium">
-                        Ingen bild
+                        Bild saknas
                       </span>
                     )}
                   </div>
@@ -207,13 +227,13 @@ export default function ProductCatalog() {
                     </span>
                   </div>
 
-                  <div className="flex items-baseline justify-between">
+                  <div className="flex items-baseline justify-between gap-2">
                     <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                       {uniqueSizes.length > 0
                         ? uniqueSizes.join(", ")
                         : "Inga storlekar"}
                     </span>
-                    <p className="text-lg font-bold text-gray-900 dark:text-white">
+                    <p className="text-lg font-bold text-gray-900 dark:text-white whitespace-nowrap">
                       {product.price} kr
                     </p>
                   </div>
