@@ -1,6 +1,9 @@
+"use client";
+
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { useEffect, useState, use } from "react";
 import { getProduct } from "@/lib/api-client";
+import type { ProductWithVariants } from "@/types/product";
 
 type ProductPageProps = {
   params: Promise<{
@@ -8,22 +11,55 @@ type ProductPageProps = {
   }>;
 };
 
-export default async function ProductPage({ params }: ProductPageProps) {
-  const { id } = await params;
-  const productId = Number(id);
+export default function ProductPage({ params }: ProductPageProps) {
+  const resolvedParams = use(params);
+  const productId = Number(resolvedParams.id);
 
-  let product = null;
-  try {
-    product = await getProduct(productId);
-  } catch {
-    product = null;
+  const [product, setProduct] = useState<ProductWithVariants | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    getProduct(productId)
+      .then((data) => {
+        setProduct(data);
+      })
+      .catch(() => {
+        setError(true);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, [productId]);
+
+  if (loading) {
+    return (
+      <div className="w-full max-w-4xl mx-auto px-4 py-16 text-center text-gray-500">
+        Laddar produkt...
+      </div>
+    );
   }
 
-  if (!product) {
-    notFound();
+  if (error || !product) {
+    return (
+      <div className="w-full max-w-4xl mx-auto px-4 py-16 text-center">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+          Produkten kunde inte hittas
+        </h1>
+        <p className="text-gray-600 dark:text-gray-400 mb-6">
+          Produkten du söker existerar inte eller så uppstod ett fel.
+        </p>
+        <Link
+          href="/"
+          className="inline-flex items-center text-sm font-medium text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 underline"
+        >
+          ← Tillbaka till produktlistan
+        </Link>
+      </div>
+    );
   }
 
-  // Räkna ut totalt lager från varianterna
+  // Beräkna totalt lager säkert
   const totalStock = product.variants?.reduce(
     (acc, v) => acc + (v.available_quantity ?? 0),
     0
