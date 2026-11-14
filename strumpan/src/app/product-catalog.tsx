@@ -18,7 +18,7 @@ export default function ProductCatalog() {
         const response = await fetch("/api/products");
 
         if (!response.ok) {
-          throw new Error("Kunde inte hämta produkter");
+          throw new Error("Could not fetch product");
         }
 
         const data: Product[] = await response.json();

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import type { Product } from "../../types/product";
+import { getProduct } from "@/lib/api-client";
 
 type ProductPageProps = {
   params: Promise<{
@@ -12,19 +12,9 @@ export default async function ProductPage({ params }: ProductPageProps) {
   const { id } = await params;
   const productId = Number(id);
 
-  // Hämtar produkten via vårt test-API
-  let product: Product | null = null;
-
+  let product = null;
   try {
-    // För serverkomponenter i utveckling kan du anropa API-ruten direkt eller filtrera mock-datan
-    const res = await fetch(`http://localhost:3000/api/products`, {
-      cache: "no-store",
-    });
-
-    if (res.ok) {
-      const products: Product[] = await res.json();
-      product = products.find((p) => p.product_id === productId) || null;
-    }
+    product = await getProduct(productId);
   } catch {
     product = null;
   }
@@ -32,6 +22,12 @@ export default async function ProductPage({ params }: ProductPageProps) {
   if (!product) {
     notFound();
   }
+
+  // Räkna ut totalt lager från varianterna
+  const totalStock = product.variants?.reduce(
+    (acc, v) => acc + (v.available_quantity ?? 0),
+    0
+  ) ?? 0;
 
   return (
     <div className="w-full max-w-4xl mx-auto px-4 py-8">
@@ -49,10 +45,10 @@ export default async function ProductPage({ params }: ProductPageProps) {
               Produkt-ID: #{product.product_id}
             </span>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              {product.product_name}
+              {product.name}
             </h1>
             <p className="mt-3 text-base text-gray-600 dark:text-gray-300 leading-relaxed">
-              {product.product_description || "Ingen beskrivning tillgänglig."}
+              {product.description || "Ingen beskrivning tillgänglig."}
             </p>
           </div>
 
@@ -65,15 +61,26 @@ export default async function ProductPage({ params }: ProductPageProps) {
             </span>
           </div>
 
-          {/* Produktdetaljer från ER-diagrammet */}
+          {/* Varianter och lagerstatus */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
             <div>
-              <span className="block font-semibold text-gray-700 dark:text-gray-300">
-                Tillgängliga storlekar:
+              <span className="block font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                Tillgängliga varianter (Storlek / Färg):
               </span>
-              <span className="text-gray-600 dark:text-gray-400">
-                {product.sizes.length > 0 ? product.sizes.join(", ") : "Inga storlekar"}
-              </span>
+              <div className="flex flex-wrap gap-2">
+                {product.variants?.length ? (
+                  product.variants.map((variant) => (
+                    <span
+                      key={variant.variant_id}
+                      className="px-2.5 py-1 text-xs rounded-md bg-gray-100 dark:bg-zinc-800 text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-zinc-700"
+                    >
+                      {variant.size} {variant.color ? `(${variant.color})` : ""} ({variant.available_quantity} st)
+                    </span>
+                  ))
+                ) : (
+                  <span className="text-gray-600 dark:text-gray-400">Inga storlekar tillgängliga</span>
+                )}
+              </div>
             </div>
 
             <div>
@@ -82,48 +89,24 @@ export default async function ProductPage({ params }: ProductPageProps) {
               </span>
               <span
                 className={`font-medium ${
-                  product.stock > 0
+                  totalStock > 0
                     ? "text-emerald-600 dark:text-emerald-400"
                     : "text-rose-600 dark:text-rose-400"
                 }`}
               >
-                {product.stock > 0
-                  ? `${product.stock} st i lager`
-                  : "Slut i lager"}
+                {totalStock > 0 ? `${totalStock} st i lager totalt` : "Slut i lager"}
               </span>
             </div>
-
-            {product.material && (
-              <div>
-                <span className="block font-semibold text-gray-700 dark:text-gray-300">
-                  Material:
-                </span>
-                <span className="text-gray-600 dark:text-gray-400">
-                  {product.material}
-                </span>
-              </div>
-            )}
-
-            {product.origin && (
-              <div>
-                <span className="block font-semibold text-gray-700 dark:text-gray-300">
-                  Ursprung:
-                </span>
-                <span className="text-gray-600 dark:text-gray-400">
-                  {product.origin}
-                </span>
-              </div>
-            )}
           </div>
 
           {/* Köpknapp */}
           <div className="mt-4">
             <button
               type="button"
-              disabled={product.stock === 0}
+              disabled={totalStock === 0}
               className="w-full sm:w-auto px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold transition-colors disabled:bg-gray-300 dark:disabled:bg-zinc-800 disabled:cursor-not-allowed"
             >
-              {product.stock > 0 ? "Lägg i varukorg" : "Slut i lager"}
+              {totalStock > 0 ? "Lägg i varukorg" : "Slut i lager"}
             </button>
           </div>
         </div>
