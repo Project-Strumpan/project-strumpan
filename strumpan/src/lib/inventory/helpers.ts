@@ -8,12 +8,17 @@ export function parseId(raw: string): number | null {
 
 export async function writeAudit(
     connection: PoolConnection,
-    adminId: number,
+    adminId: number | undefined,
     handling: string,
     tableName: string,
     recordId: number,
     details: object
 ) {
+    if (adminId === undefined) {
+        console.warn("Skipping audit log because no local admin record exists.");
+        return;
+    }
+
     await connection.query(
         `INSERT INTO Audit_log (admin_id, handling, table_name, record_id, details)
          VALUES (?, ?, ?, ?, ?)`,

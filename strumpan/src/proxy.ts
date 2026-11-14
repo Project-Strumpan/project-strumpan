@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth0 } from "./lib/auth";
-import { hasAdminRole } from "./lib/auth";
+import { auth0, hasAdminPermission } from "./lib/auth";
 
 export async function proxy(request: NextRequest) {
   const authResponse = await auth0.middleware(request);
@@ -17,7 +16,7 @@ export async function proxy(request: NextRequest) {
     );
   }
 
-  if (!hasAdminRole(session.user)) {
+  if (!await hasAdminPermission(request, authResponse)) {
     return new Response("Forbidden", { status: 403 });
   }
 
