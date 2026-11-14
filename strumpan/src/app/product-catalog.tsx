@@ -1,11 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import type { CatalogueProduct, ProductVariant } from "@/types/product";
 
-// Utökad typ för katalogen som även hanterar hämtade varianter/lager
 type CatalogProductItem = CatalogueProduct & {
   variants?: ProductVariant[];
 };
@@ -20,12 +18,10 @@ export default function ProductCatalog() {
   useEffect(() => {
     async function loadCatalogData() {
       try {
-        // 1. Hämta baslistan från /api/products route
         const res = await fetch("/api/products");
         if (!res.ok) throw new Error("Could not fetch products");
         const baseProducts: CatalogueProduct[] = await res.json();
 
-        // 2. För varje produkt, hämta dess varianter via /api/products/[id]/variants route
         const productsWithVariants = await Promise.all(
           baseProducts.map(async (product: CatalogueProduct) => {
             try {
@@ -35,7 +31,7 @@ export default function ProductCatalog() {
                 return { ...product, variants };
               }
             } catch {
-              // Om variant-hämtning misslyckas, returnera utan varianter
+              // Ignorera om varianter misslyckas
             }
             return { ...product, variants: [] };
           })
@@ -52,7 +48,6 @@ export default function ProductCatalog() {
     loadCatalogData();
   }, []);
 
-  // Filtrering baserad på storlek och pris med satta typer
   const filteredProducts = useMemo(() => {
     return products.filter((product: CatalogProductItem) => {
       const matchesSize =
@@ -85,7 +80,6 @@ export default function ProductCatalog() {
 
   return (
     <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Rubrik */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
           Strumpor & Sortiment
@@ -97,7 +91,6 @@ export default function ProductCatalog() {
 
       {/* Filter-sektion */}
       <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 p-4 rounded-xl shadow-sm mb-6 flex flex-wrap items-end gap-4">
-        {/* Storlek-filter */}
         <div className="flex flex-col gap-1.5 flex-1 min-w-[140px]">
           <label htmlFor="size-filter" className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
             Storlek
@@ -118,7 +111,6 @@ export default function ProductCatalog() {
           </select>
         </div>
 
-        {/* Maxpris-filter */}
         <div className="flex flex-col gap-1.5 flex-1 min-w-[140px]">
           <label htmlFor="price-filter" className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
             Maxpris (kr)
@@ -134,7 +126,6 @@ export default function ProductCatalog() {
           />
         </div>
 
-        {/* Rensa filter-knapp */}
         <button
           type="button"
           onClick={() => {
@@ -147,12 +138,10 @@ export default function ProductCatalog() {
         </button>
       </div>
 
-      {/* Produktantal */}
       <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
         Visar <span className="font-semibold text-gray-900 dark:text-white">{filteredProducts.length}</span> av {products.length} produkter
       </p>
 
-      {/* Produktnätverk */}
       {filteredProducts.length === 0 ? (
         <div className="text-center py-16 bg-gray-50 dark:bg-zinc-900/50 rounded-2xl border border-dashed border-gray-300 dark:border-zinc-800">
           <p className="text-gray-500 dark:text-gray-400 font-medium">
@@ -162,7 +151,6 @@ export default function ProductCatalog() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {filteredProducts.map((product: CatalogProductItem) => {
-            // Beräkna totalt lager från varianterna med tydliga typer
             const totalStock = product.variants?.reduce(
               (acc: number, v: ProductVariant) => acc + (v.available_quantity ?? 0),
               0
@@ -179,16 +167,20 @@ export default function ProductCatalog() {
                 className="group flex flex-col justify-between rounded-xl border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md hover:border-indigo-500 dark:hover:border-indigo-500"
               >
                 <div>
-                  {product.image_url && (
-                    <div className="relative w-full h-48 mb-4 overflow-hidden rounded-lg bg-gray-100 dark:bg-zinc-800">
-                      <Image
+                  {/* Valfri bild med standard <img> och fallback om den saknas */}
+                  <div className="relative w-full h-48 mb-4 overflow-hidden rounded-lg bg-gray-100 dark:bg-zinc-800 flex items-center justify-center">
+                    {product.image_url ? (
+                      <img
                         src={product.image_url}
                         alt={product.name}
-                        fill
-                        className="object-cover group-hover:scale-105 transition-transform duration-200"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                       />
-                    </div>
-                  )}
+                    ) : (
+                      <span className="text-xs text-gray-400 dark:text-gray-500 font-medium">
+                        Ingen bild
+                      </span>
+                    )}
+                  </div>
 
                   <h2 className="text-lg font-semibold text-gray-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                     {product.name}
@@ -199,7 +191,6 @@ export default function ProductCatalog() {
                   </p>
                 </div>
 
-                {/* Nedre sektion: Storlekar, Lager & Pris */}
                 <div className="mt-6 pt-4 border-t border-gray-100 dark:border-zinc-800">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs text-gray-400 uppercase tracking-wider font-medium">
