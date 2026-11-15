@@ -5,7 +5,6 @@ import userEvent from "@testing-library/user-event";
 import "@testing-library/jest-dom/vitest";
 import { cleanup } from "@testing-library/react";
 import { afterEach } from "vitest";
-
 import { CartProvider, CartContext } from "./CartContext";
 
 // Mock product data used for calculating the total cost

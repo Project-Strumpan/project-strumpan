@@ -3,16 +3,14 @@ import { Button, Form, Row, Col } from 'react-bootstrap';
 import AddToCart from './AddToCart';
 import Link from 'next/link';
 import { Product } from '@/app/CartContext';
-//import { db } from '@/lib/db';
+// import { getProduct } from '@/lib/api-client';
 
-// const product = await db.product.findUnique({
-    //     where: { slug },
-    // });
 export default async function ProductDetails({params, }: {
-    params: Promise<{ slug: string }>;
+    params: Promise<{ slug: number }>;
 }) {
-    const product: Product = productsArray[0];
     const { slug } = await params
+    //const products = getProduct(slug);
+    const product: Product = productsArray[0];
 
     return (
         <div>
