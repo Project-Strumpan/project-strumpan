@@ -11,7 +11,7 @@ export default function CartPage() {
     0
   );
 
-  const shipping = subtotal >= 300 ? 0 : 15;
+  const shipping = subtotal >= 300 || subtotal == 0 ? 0 : 15;
   const total = subtotal + shipping;
 
   return (
@@ -63,7 +63,7 @@ export default function CartPage() {
                         </p>
                       </div>
 
-                      <p className="font-medium text-gray-900"> 
+                      <p className="font-medium text-gray-900" aria-label={"price of " + item.product_name} > 
                         {(item.price * item.quantity).toFixed(2)} kr
                       </p>
                     </div>
