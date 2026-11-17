@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth0, hasAdminPermission } from "./lib/auth";
 
 export async function proxy(request: NextRequest) {
+  // Om Auth0 inte är konfigurerat i lokal miljö, hoppa över middleware så vanliga sidor fungerar
+  if (!process.env.AUTH0_DOMAIN) {
+    return NextResponse.next();
+  }
+
   const authResponse = await auth0.middleware(request);
   const url = new URL(request.url);
 

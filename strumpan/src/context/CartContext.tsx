@@ -1,7 +1,6 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState, useMemo } from "react";
-import { useRouter } from "next/navigation";
 import { OrderItemInput, calculateOrderPricing, PricingSummary } from "@/lib/pricing";
 
 export interface CartItem extends OrderItemInput {
@@ -55,7 +54,6 @@ export const DEFAULT_DEMO_ITEMS: CartItem[] = [
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
   const [items, setItems] = useState<CartItem[]>([]);
   const [isHydrated, setIsHydrated] = useState(false);
 
@@ -137,7 +135,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
    */
   function buyNow(item: Omit<CartItem, "quantity"> & { quantity?: number }) {
     addItem(item);
-    router.push("/checkout");
+    if (typeof window !== "undefined") {
+      window.location.assign("/checkout");
+    }
   }
 
   // Kompatibilitetsfunktioner för pro-7 branch
