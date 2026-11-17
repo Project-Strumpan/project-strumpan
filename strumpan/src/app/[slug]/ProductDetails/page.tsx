@@ -9,7 +9,6 @@ export default async function ProductDetails({params, }: {
     params: Promise<{ slug: number }>;
 }) {
     const { slug } = await params
-    //const products = getProduct(slug);
     const product: Product = productsArray[0];
 
     return (
