@@ -35,6 +35,7 @@ export const DEFAULT_COUNTRY_CODE = "SE";
 export interface OrderItemInput {
   id: string | number;
   title: string;
+  description: string;
   price: number; // Pris per st i SEK (inkl. moms för konsument)
   quantity: number;
   picture_url?: string | null;

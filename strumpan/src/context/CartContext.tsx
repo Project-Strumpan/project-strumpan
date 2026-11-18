@@ -34,6 +34,7 @@ export const DEFAULT_DEMO_ITEMS: CartItem[] = [
   {
     id: "1",
     title: "Klassisk Ullstrumpa - Svart",
+    description: "beskrivning",
     price: 129,
     quantity: 2,
     size: "40-45",
@@ -43,6 +44,7 @@ export const DEFAULT_DEMO_ITEMS: CartItem[] = [
   {
     id: "2",
     title: "Randig Bomullsstrumpa - Blå/Vit",
+    description: "beskrivning",
     price: 89,
     quantity: 1,
     size: "40-45",
@@ -146,7 +148,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }
 
   function addOneToCart(id: string) {
-    addItem({ id, title: `Strumpa ${id}`, price: 99 });
+    addItem({ id, title: `Strumpa ${id}`, description: "beskrivning", price: 99 });
   }
 
   function removeOneFromCart(id: string) {

@@ -43,11 +43,11 @@ function CartControls() {
 
     return (
         <div>
-            <button onClick={() => cart.addOneToCart(1)}>
+            <button onClick={() => cart.addOneToCart("1")}>
                 Add product 1
             </button>
 
-            <button onClick={() => cart.addOneToCart(2)}>
+            <button onClick={() => cart.addOneToCart("2")}>
                 Add product 2
             </button>
         </div>
@@ -87,7 +87,7 @@ function NavigationTest() {
             </button>
 
             {page === "product" && (
-                <button onClick={() => cart.addOneToCart(1)}>
+                <button onClick={() => cart.addOneToCart("1")}>
                     Add product
                 </button>
             )}
