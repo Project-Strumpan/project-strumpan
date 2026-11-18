@@ -35,7 +35,7 @@ export async function PATCH(request: Request, { params }: Context) {
     }
 
     const keys = Object.keys(body ?? {});
-    if (keys.length === 0 || keys.some((k) => !(k in COLUMNS))) {
+    if (keys.length === 0 || keys.some((k) => !Object.prototype.hasOwnProperty.call(COLUMNS, k))) {
         return NextResponse.json({ error: "Field not allowed" }, { status: 400 });
     }
 

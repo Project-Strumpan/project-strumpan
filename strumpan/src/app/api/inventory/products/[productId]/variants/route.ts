@@ -76,8 +76,12 @@ export async function POST(request: Request, { params }: Context) {
         return NextResponse.json({ variant_id: variantId }, { status: 201 });
     } catch (error) {
         try { await connection?.rollback(); } catch { /* ignore */ }
+        if ((error as { code?: string }).code === "ER_NO_REFERENCED_ROW_2") {
+            return NextResponse.json({ error: "Product not found" }, { status: 404 });
+        }
         return dbErrorResponse(error, "Failed to add variant");
     } finally {
+
         connection?.release();
     }
 }

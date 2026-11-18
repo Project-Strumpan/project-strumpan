@@ -88,6 +88,8 @@ CREATE TABLE IF NOT EXISTS Orders (
         ON DELETE RESTRICT ON UPDATE CASCADE
 );
 
+-- variant_id uses RESTRICT so a variant/product referenced by an order cannot be deleted
+-- (preserves order history, PRO-73).
 CREATE TABLE IF NOT EXISTS Order_items (
     order_item_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     order_id INT NOT NULL,
@@ -97,7 +99,7 @@ CREATE TABLE IF NOT EXISTS Order_items (
     FOREIGN KEY (order_id) REFERENCES Orders(order_id)
         ON DELETE CASCADE ON UPDATE CASCADE,
     FOREIGN KEY (variant_id) REFERENCES Product_variants(variant_id)
-        ON DELETE CASCADE ON UPDATE CASCADE
+        ON DELETE RESTRICT ON UPDATE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS Payments (

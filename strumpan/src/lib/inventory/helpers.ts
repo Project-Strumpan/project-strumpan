@@ -97,6 +97,12 @@ export function dbErrorResponse(error: unknown, fallback: string) {
     if (code === "ER_NO_REFERENCED_ROW_2") {
         return fieldError("categoryId", "Invalid category");
     }
+    if (code === "ER_ROW_IS_REFERENCED_2") {
+        return NextResponse.json(
+            { error: "Record has orders and cannot be deleted" },
+            { status: 409 }
+        );
+    }
     console.error(fallback, error);
     return NextResponse.json({ error: fallback }, { status: 500 });
 }
