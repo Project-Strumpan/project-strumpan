@@ -46,8 +46,8 @@ export default function CartPage() {
                 >
                   {/* Image */}
                   <img
-                    src={item.picture_url}
-                    alt={item.product_name}
+                    src={item.picture_url || ""}
+                    aria-hidden="true"
                     className="h-24 w-24 rounded-xl object-cover sm:h-28 sm:w-28"
                   />
 
@@ -56,14 +56,14 @@ export default function CartPage() {
                     <div className="flex justify-between gap-4">
                       <div>
                         <h3 className="font-medium text-gray-900">
-                          {item.product_name}
+                          {item.title}
                         </h3>
                         <p className="mt-1 text-sm text-gray-500">
-                          {item.product_description}
+                          {item.description}
                         </p>
                       </div>
 
-                      <p className="font-medium text-gray-900" aria-label={"price of " + item.product_name} > 
+                      <p className="font-medium text-gray-900" aria-label={"price of " + item.title} > 
                         {(item.price * item.quantity).toFixed(2)} kr
                       </p>
                     </div>

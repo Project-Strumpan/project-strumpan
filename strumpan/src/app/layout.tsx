@@ -33,12 +33,6 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col bg-background text-gray-900">
         <Navbar/>
         <Providers>
-          <header className="d-flex bg-amber-200 align-items-center flex flex-row p-3">
-            <Link href="/" className="text-decoration-none ">
-              <h2 className="w-32 col-auto text-black">My Store</h2>
-            </Link>
-        
-          </header>
           <div className="flex-1">{children}</div>
           <footer className="flex justify-center gap-4 border-t border-gray-200 bg-white px-4 py-6 text-sm text-gray-600">
             <Link href="/about" className="hover:underline">
