@@ -3,12 +3,12 @@ import assert from "node:assert/strict";
 import { calculateOrderPricing } from "../lib/pricing";
 
 // Simulerad Cart-logik som speglar metoderna i CartContext för ren enhetstestning
-function createMockCart(initialItems: Array<{ id: string; title: string; price: number; quantity: number }> = []) {
+function createMockCart(initialItems: Array<{ id: string; title: string; description: string; price: number; quantity: number }> = []) {
   let items = [...initialItems];
 
   return {
     getItems: () => items,
-    addItem: (item: { id: string; title: string; price: number; quantity?: number }) => {
+    addItem: (item: { id: string; title: string; description: string; price: number; quantity?: number }) => {
       const qty = item.quantity && item.quantity > 0 ? item.quantity : 1;
       const existing = items.findIndex((i) => i.id === item.id);
       if (existing > -1) {
@@ -30,7 +30,7 @@ function createMockCart(initialItems: Array<{ id: string; title: string; price: 
     clearCart: () => {
       items = [];
     },
-    buyNow: (item: { id: string; title: string; price: number }) => {
+    buyNow: (item: { id: string; title: string; description: string; price: number }) => {
       // 1. Lägg till varan om den inte finns
       const existing = items.find((i) => i.id === item.id);
       if (!existing) {
@@ -45,8 +45,8 @@ function createMockCart(initialItems: Array<{ id: string; title: string; price: 
 describe("Cart & Buy Now Flow (Acceptanskriterier för snabbkassa & varukorg)", () => {
   it("ska återanvända varukorgen när kunden har flera artiklar", () => {
     const cart = createMockCart([
-      { id: "1", title: "Ullstrumpa Svart", price: 129, quantity: 2 },
-      { id: "2", title: "Sportstrumpa Vit", price: 89, quantity: 1 },
+      { id: "1", title: "Ullstrumpa Svart", description: "beskrivning1", price: 129, quantity: 2 },
+      { id: "2", title: "Sportstrumpa Vit", description: "beskrivning2",price: 89, quantity: 1 },
     ]);
 
     assert.equal(cart.getItems().length, 2);
@@ -58,13 +58,14 @@ describe("Cart & Buy Now Flow (Acceptanskriterier för snabbkassa & varukorg)", 
 
   it("ska stödja 'Köp nu' (Buy now) med direkt navigering till /checkout i 1 klick", () => {
     const cart = createMockCart([
-      { id: "existing-1", title: "Tidigare sparad strumpa", price: 99, quantity: 1 },
+      { id: "existing-1", title: "Tidigare sparad strumpa", description: "beskrivning", price: 99, quantity: 1 },
     ]);
 
     // Kunden klickar "Köp nu" på en ny produktsida
     const redirectUrl = cart.buyNow({
       id: "quick-item-1",
       title: "Snabbköpt Skidstrumpa",
+      description: "beskrivning",
       price: 199,
     });
 
@@ -82,7 +83,7 @@ describe("Cart & Buy Now Flow (Acceptanskriterier för snabbkassa & varukorg)", 
 
   it("ska uppdatera kvantitet och ta bort artikel vid antal <= 0", () => {
     const cart = createMockCart([
-      { id: "1", title: "Strumpa", price: 50, quantity: 2 },
+      { id: "1", title: "Strumpa", description: "beskrivning", price: 50, quantity: 2 },
     ]);
 
     cart.updateQuantity("1", 3);
@@ -95,7 +96,7 @@ describe("Cart & Buy Now Flow (Acceptanskriterier för snabbkassa & varukorg)", 
 
   it("ska tömma varukorgen vid slutfört köp", () => {
     const cart = createMockCart([
-      { id: "1", title: "Strumpa", price: 100, quantity: 2 },
+      { id: "1", title: "Strumpa", description: "beskrivning", price: 100, quantity: 2 },
     ]);
 
     assert.equal(cart.getItems().length, 1);
