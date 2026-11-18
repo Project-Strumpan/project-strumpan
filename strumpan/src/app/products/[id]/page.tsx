@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, use } from "react";
+import { useEffect, useContext, useState, use } from "react";
 import { getProduct } from "@/lib/api-client";
 import type { ProductWithVariants } from "@/types/product";
+import { CartContext } from "@/app/CartContext";
+import AddToCart from "../AddToCart";
 
 type ProductPageProps = {
   params: Promise<{
@@ -12,6 +14,7 @@ type ProductPageProps = {
 };
 
 export default function ProductPage({ params }: ProductPageProps) {
+  const cart = useContext(CartContext);
   const resolvedParams = use(params);
   const productId = Number(resolvedParams.id);
 
@@ -137,13 +140,16 @@ export default function ProductPage({ params }: ProductPageProps) {
 
           {/* Köpknapp */}
           <div className="mt-4">
-            <button
-              type="button"
-              disabled={totalStock === 0}
-              className="w-full sm:w-auto px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold transition-colors disabled:bg-gray-300 dark:disabled:bg-zinc-800 disabled:cursor-not-allowed"
-            >
-              {totalStock > 0 ? "Lägg i varukorg" : "Slut i lager"}
-            </button>
+            <AddToCart
+              product={{
+                id: String(product.product_id),
+                title: product.name,
+                description: product.description ?? "",
+                price: product.price,
+                picture_url: product.image_url,
+              }}
+              available={totalStock > 0}
+            />
           </div>
         </div>
       </div>
