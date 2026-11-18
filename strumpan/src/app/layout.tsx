@@ -4,7 +4,6 @@ import Link from "next/link";
 import "./globals.css";
 import Providers from "./providers";
 import Navbar from "@/components/Navbar";
-import CartButton from "@/components/CartButton";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -38,7 +37,6 @@ export default function RootLayout({
             <Link href="/" className="text-decoration-none ">
               <h2 className="w-32 col-auto text-black">My Store</h2>
             </Link>
-            <CartButton/>
         
           </header>
           <div className="flex-1">{children}</div>
