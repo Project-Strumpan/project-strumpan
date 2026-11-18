@@ -94,18 +94,18 @@ export default function ProductCatalog() {
   return (
     <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
+        <h1 className="text-3xl font-bold tracking-tight text-zinc-800">
           Strumpor & Sortiment
         </h1>
-        <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+        <p className="mt-2 text-sm text-gray-600">
           Utforska vårt utbud av bekväma strumpor för alla tillfällen.
         </p>
       </div>
 
       {/* Filter-sektion */}
-      <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 p-4 rounded-xl shadow-sm mb-6 flex flex-wrap items-end gap-4">
+      <div className="bg-foreground p-4 rounded-xl shadow-sm mb-6 flex flex-wrap items-end gap-4">
         <div className="flex flex-col gap-1.5 flex-1 min-w-[140px]">
-          <label htmlFor="size-filter" className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+          <label htmlFor="size-filter" className="text-xs font-semibold text-zinc-800 uppercase tracking-wider">
             Storlek
           </label>
           <select
@@ -124,7 +124,7 @@ export default function ProductCatalog() {
         </div>
 
         <div className="flex flex-col gap-1.5 flex-1 min-w-[140px]">
-          <label htmlFor="price-filter" className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+          <label htmlFor="price-filter" className="text-xs font-semibold text-zinc-800 uppercase tracking-wider">
             Maxpris (kr)
           </label>
           <input
@@ -134,7 +134,7 @@ export default function ProductCatalog() {
             placeholder="Exempel: 150"
             value={maxPrice}
             onChange={(event) => setMaxPrice(event.target.value)}
-            className="w-full rounded-lg border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+            className="w-full rounded-lg border border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-white focus:ring-2 focus:ring-indigo-500 outline-none"
           />
         </div>
 
@@ -144,18 +144,18 @@ export default function ProductCatalog() {
             setSelectedSize("");
             setMaxPrice("");
           }}
-          className="rounded-lg border border-gray-300 dark:border-zinc-700 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
+          className="rounded-lg border border-zinc-700 bg-zinc-800 px-4 py-2 text-sm font-medium text-white hover:bg-foreground hover:text-zinc-800 transition-colors"
         >
           Rensa filter
         </button>
       </div>
 
-      <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-        Visar <span className="font-semibold text-gray-900 dark:text-white">{filteredProducts.length}</span> av {products.length} produkter
+      <p className="text-sm text-zinc-800 mb-6">
+        Visar <span className="font-semibold text-white">{filteredProducts.length}</span> av {products.length} produkter
       </p>
 
       {filteredProducts.length === 0 ? (
-        <div className="text-center py-16 bg-gray-50 dark:bg-zinc-900/50 rounded-2xl border border-dashed border-gray-300 dark:border-zinc-800">
+        <div className="text-center py-16 bg-foreground rounded-2xl border border-dashed border-zinc-800">
           <p className="text-gray-500 dark:text-gray-400 font-medium">
             Inga produkter matchar dina filter.
           </p>
@@ -178,7 +178,7 @@ export default function ProductCatalog() {
               <Link
                 key={product.product_id}
                 href={`/products/${product.product_id}`}
-                className="group flex flex-col justify-between rounded-xl border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md hover:border-indigo-500 dark:hover:border-indigo-500"
+                className="group flex flex-col justify-between rounded-xl bg-foreground p-5 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md hover:border-indigo-500 dark:hover:border-indigo-500"
               >
                 <div>
                   {/* Bildruta som visar bild om den finns och fungerar, annars "Bild saknas" */}
@@ -202,11 +202,11 @@ export default function ProductCatalog() {
                     )}
                   </div>
 
-                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                  <h2 className="text-lg font-semibold text-zinc-800 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                     {product.name}
                   </h2>
 
-                  <p className="mt-2 text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
+                  <p className="mt-2 text-sm text-gray-600 line-clamp-2">
                     {product.description || "Ingen beskrivning tillgänglig."}
                   </p>
                 </div>
