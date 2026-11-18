@@ -1,7 +1,14 @@
+/*
+ * GET product with variants, PATCH product name, DELETE product without orders (PRO-73)
+ * Editable fields (allowlist): productName.
+ * Price, category and marketing fields are owner-only.
+ * Errors: { error, field } where field names the invalid input.
+*/
+
 import { NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import { authorizeInventoryAccess } from "@/lib/inventory/access";
-import { dbErrorResponse, parseId, writeAudit } from "@/lib/inventory/helpers";
+import { dbErrorResponse, fieldError, parseId, writeAudit } from "@/lib/inventory/helpers";
 
 type Context = { params: Promise<{ productId: string }> };
 
@@ -85,7 +92,7 @@ export async function PATCH(request: Request, { params }: Context) {
     }
     const name = body.productName;
     if (typeof name !== "string" || name.trim() === "" || name.length > 255) {
-        return NextResponse.json({ error: "Invalid product name" }, { status: 400 });
+        return fieldError("productName", "Invalid product name");
     }
 
     let connection;
