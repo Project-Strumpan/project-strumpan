@@ -4,6 +4,7 @@ import Link from "next/link";
 import "./globals.css";
 import Providers from "./providers";
 import Navbar from "@/components/Navbar";
+import Footer from "./footer/page"
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
