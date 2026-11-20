@@ -3,6 +3,6 @@ import  ContactPage  from "@/app/support-contact/page";
 
 export default function Home() {
   return (
-    <ContactPage/>
+    <div></div>
     );
 }
