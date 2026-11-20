@@ -1,0 +1,640 @@
+openapi: 3.1.0
+info:
+  title: Strumpan API
+  version: 0.1.0
+  description: |
+    Next.js route handlers under `src/app/api`. Documents current behaviour.
+    Admin endpoints (`/inventory/*`) require an Auth0 session with the `admin:access` permission.
+servers:
+  - url: /api
+
+tags:
+  - name: Catalogue
+  - name: Checkout
+  - name: Orders
+  - name: Inventory (admin)
+
+paths:
+  /products:
+    get:
+      tags: [Catalogue]
+      summary: List all products
+      responses:
+        "200":
+          description: Products ordered by product_id
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/CatalogueProduct" }
+        "500": { $ref: "#/components/responses/Error" }
+
+  /products/{id}:
+    get:
+      tags: [Catalogue]
+      summary: Get a product with its variants and stock
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      responses:
+        "200":
+          description: Product
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProductWithVariants" }
+        "400": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "500": { $ref: "#/components/responses/Error" }
+
+  /products/{id}/availability:
+    get:
+      tags: [Catalogue]
+      summary: Stock per variant for a product
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      responses:
+        "200":
+          description: Inventory rows
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required: [inventory_id, variant_id, quantity, last_updated]
+                  properties:
+                    inventory_id: { type: integer }
+                    variant_id: { type: integer }
+                    quantity: { type: integer }
+                    last_updated: { type: [string, "null"], format: date-time }
+        "400": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "500": { $ref: "#/components/responses/Error" }
+
+  /products/{id}/variants:
+    get:
+      tags: [Catalogue]
+      summary: Demo-only variant list (hardcoded, product 1 only)
+      description: Returns 501 outside development.
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      responses:
+        "200":
+          description: Variants
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    variant_id: { type: integer }
+                    product_id: { type: integer }
+                    product_variant_size: { type: string }
+                    color: { type: [string, "null"] }
+                    sku: { type: string }
+        "400": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "501": { $ref: "#/components/responses/Error" }
+
+  /categories:
+    get:
+      tags: [Catalogue]
+      summary: Demo-only category list (hardcoded)
+      description: Returns 501 outside development.
+      responses:
+        "200":
+          description: Categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    category_id: { type: integer }
+                    category_name: { type: string }
+                    category_description: { type: [string, "null"] }
+        "501": { $ref: "#/components/responses/Error" }
+
+  /create-payment-intent:
+    post:
+      tags: [Checkout]
+      summary: Create a Stripe PaymentIntent for the cart
+      description: |
+        Amount is computed from the submitted item prices plus shipping (SEK, VAT incl.).
+        If Stripe keys are missing, responds 200 with `error: STRIPE_KEYS_MISSING` and `pricing` only.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [items]
+              properties:
+                items:
+                  type: array
+                  minItems: 1
+                  items: { $ref: "#/components/schemas/CartItem" }
+                countryCode: { type: string, default: SE, example: SE }
+                customerEmail: { type: string, format: email }
+      responses:
+        "200":
+          description: PaymentIntent created (or Stripe not configured)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  clientSecret: { type: string }
+                  pricing: { $ref: "#/components/schemas/PricingSummary" }
+                  error: { type: string, enum: [STRIPE_KEYS_MISSING] }
+                  message: { type: string }
+        "400":
+          description: EMPTY_CART or INVALID_AMOUNT
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CheckoutError" }
+        "500":
+          description: PAYMENT_INTENT_FAILED
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CheckoutError" }
+
+  /orders:
+    post:
+      tags: [Orders]
+      summary: Create an order for the signed-in customer
+      security: [{ auth0Session: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [delivery_address_id, invoice_address_id, items]
+              properties:
+                delivery_address_id: { type: integer, minimum: 1 }
+                invoice_address_id: { type: integer, minimum: 1 }
+                items:
+                  type: array
+                  minItems: 1
+                  description: Each variant_id may appear once.
+                  items:
+                    type: object
+                    required: [variant_id, quantity]
+                    properties:
+                      variant_id: { type: integer, minimum: 1 }
+                      quantity: { type: integer, minimum: 1 }
+      responses:
+        "201":
+          description: Order created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  order_id: { type: integer }
+                  order_status: { type: string, enum: [created] }
+                  total_cost: { type: number }
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        order_item_id: { type: integer }
+                        variant_id: { type: integer }
+                        quantity: { type: integer }
+                        unit_price: { type: number }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "409":
+          description: Insufficient stock
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "500": { $ref: "#/components/responses/Error" }
+
+  /orders/{id}:
+    get:
+      tags: [Orders]
+      summary: Get one of the signed-in customer's orders
+      security: [{ auth0Session: [] }]
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      responses:
+        "200":
+          description: Order with items
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Order" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "500": { $ref: "#/components/responses/Error" }
+
+  /inventory:
+    get:
+      tags: [Inventory (admin)]
+      summary: Inventory overview with filters
+      security: [{ auth0Session: [admin:access] }]
+      parameters:
+        - { name: search, in: query, schema: { type: string }, description: Matches product name or SKU }
+        - { name: color, in: query, schema: { type: string } }
+        - { name: size, in: query, schema: { type: string } }
+        - name: availability
+          in: query
+          schema: { $ref: "#/components/schemas/Availability" }
+      responses:
+        "200":
+          description: Inventory list
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, total]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/InventoryItem" }
+                  total: { type: integer }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "500": { $ref: "#/components/responses/Error" }
+
+  /inventory/{variantId}:
+    patch:
+      tags: [Inventory (admin)]
+      summary: Set stock quantity (optimistic concurrency)
+      security: [{ auth0Session: [admin:access] }]
+      parameters: [{ $ref: "#/components/parameters/VariantId" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [quantity, expectedQuantity]
+              properties:
+                quantity: { type: integer, minimum: 0, maximum: 2147483647 }
+                expectedQuantity:
+                  type: integer
+                  minimum: 0
+                  description: Current quantity the client saw; mismatch returns 409.
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  variant_id: { type: integer }
+                  quantity: { type: integer }
+                  last_updated: { type: string, format: date-time }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409":
+          description: Stock changed by someone else
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error: { type: string }
+                  currentQuantity: { type: integer }
+        "500": { $ref: "#/components/responses/Error" }
+
+  /inventory/products:
+    post:
+      tags: [Inventory (admin)]
+      summary: Create a product with variants and inventory rows
+      security: [{ auth0Session: [admin:access] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [productName, categoryId, price, variants]
+              properties:
+                productName: { type: string, maxLength: 255 }
+                categoryId: { type: integer, minimum: 1 }
+                price: { type: number, minimum: 0 }
+                variants:
+                  type: array
+                  minItems: 1
+                  items:
+                    type: object
+                    required: [sku, size, quantity]
+                    properties:
+                      sku: { type: string, maxLength: 100 }
+                      size: { type: string, maxLength: 50 }
+                      color: { type: [string, "null"], maxLength: 100 }
+                      quantity: { type: integer, minimum: 0 }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  product_id: { type: integer }
+                  variant_ids: { type: array, items: { type: integer } }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "409":
+          description: SKU already exists
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "500": { $ref: "#/components/responses/Error" }
+
+  /inventory/products/{productId}:
+    parameters:
+      - { name: productId, in: path, required: true, schema: { type: integer, minimum: 1 } }
+    get:
+      tags: [Inventory (admin)]
+      summary: Get product with variants for editing
+      security: [{ auth0Session: [admin:access] }]
+      responses:
+        "200":
+          description: Product
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  product_id: { type: integer }
+                  product_name: { type: string }
+                  category_id: { type: integer }
+                  variants:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        variant_id: { type: integer }
+                        sku: { type: string }
+                        color: { type: [string, "null"] }
+                        size: { type: string }
+                        quantity: { type: integer }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "500": { $ref: "#/components/responses/Error" }
+    patch:
+      tags: [Inventory (admin)]
+      summary: Rename a product
+      security: [{ auth0Session: [admin:access] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [productName]
+              properties:
+                productName: { type: string, maxLength: 255 }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  product_id: { type: integer }
+                  productName: { type: string }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "500": { $ref: "#/components/responses/Error" }
+    delete:
+      tags: [Inventory (admin)]
+      summary: Delete a product that has no orders
+      security: [{ auth0Session: [admin:access] }]
+      responses:
+        "200": { $ref: "#/components/responses/Deleted" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409":
+          description: Product has orders
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "500": { $ref: "#/components/responses/Error" }
+
+  /inventory/variants/{variantId}:
+    parameters: [{ $ref: "#/components/parameters/VariantId" }]
+    patch:
+      tags: [Inventory (admin)]
+      summary: Update variant fields
+      security: [{ auth0Session: [admin:access] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              minProperties: 1
+              properties:
+                sku: { type: string, maxLength: 100 }
+                size: { type: string, maxLength: 100 }
+                color: { type: [string, "null"], maxLength: 100, description: Empty string or null clears it }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  variant_id: { type: integer }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409":
+          description: SKU already exists
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "500": { $ref: "#/components/responses/Error" }
+    delete:
+      tags: [Inventory (admin)]
+      summary: Delete a variant that has no orders
+      security: [{ auth0Session: [admin:access] }]
+      responses:
+        "200": { $ref: "#/components/responses/Deleted" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409":
+          description: Variant has orders
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "500": { $ref: "#/components/responses/Error" }
+
+components:
+  securitySchemes:
+    auth0Session:
+      type: apiKey
+      in: cookie
+      name: __session
+      description: Auth0 session cookie set by /auth/login.
+
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema: { type: integer, minimum: 1 }
+    VariantId:
+      name: variantId
+      in: path
+      required: true
+      schema: { type: integer, minimum: 1 }
+
+  responses:
+    Error:
+      description: Error
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Deleted:
+      description: Deleted
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              product_id: { type: integer }
+              variant_id: { type: integer }
+              deleted: { type: boolean, const: true }
+
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error: { type: string }
+
+    CheckoutError:
+      type: object
+      required: [error, message]
+      properties:
+        error: { type: string, enum: [EMPTY_CART, INVALID_AMOUNT, PAYMENT_INTENT_FAILED] }
+        message: { type: string }
+
+    Availability:
+      type: string
+      enum: [in_stock, low_stock, out_of_stock]
+
+    CatalogueProduct:
+      type: object
+      required: [product_id, category_id, name, price]
+      properties:
+        product_id: { type: integer }
+        category_id: { type: integer }
+        name: { type: string }
+        description: { type: [string, "null"] }
+        price: { type: [number, string], description: DECIMAL from the database; may arrive as a string }
+        image_url: { type: [string, "null"] }
+
+    ProductWithVariants:
+      type: object
+      required: [product_id, category_id, name, price, variants]
+      properties:
+        product_id: { type: integer }
+        category_id: { type: integer }
+        name: { type: string }
+        description: { type: [string, "null"] }
+        price: { type: number }
+        image_url: { type: [string, "null"] }
+        variants:
+          type: array
+          items:
+            type: object
+            required: [variant_id, size, sku, available_quantity]
+            properties:
+              variant_id: { type: integer }
+              size: { type: string }
+              color: { type: [string, "null"] }
+              sku: { type: string }
+              available_quantity: { type: integer }
+
+    CartItem:
+      type: object
+      required: [id, title, price, quantity]
+      properties:
+        id: { type: [string, integer] }
+        title: { type: string }
+        description: { type: string }
+        price: { type: number, description: Unit price in SEK incl. VAT }
+        quantity: { type: integer }
+        picture_url: { type: [string, "null"] }
+        size: { type: string }
+        color: { type: string }
+
+    PricingSummary:
+      type: object
+      properties:
+        countryCode: { type: string }
+        countryName: { type: string }
+        vatRate: { type: number }
+        vatPercentageText: { type: string }
+        subtotalGross: { type: number }
+        subtotalNet: { type: number }
+        subtotalVat: { type: number }
+        shippingGross: { type: number }
+        shippingNet: { type: number }
+        shippingVat: { type: number }
+        isFreeShipping: { type: boolean }
+        totalVat: { type: number }
+        totalGross: { type: number }
+        totalGrossInOre: { type: integer }
+        currency: { type: string, const: SEK }
+
+    InventoryItem:
+      type: object
+      properties:
+        product_id: { type: integer }
+        variant_id: { type: integer }
+        name: { type: string }
+        sku: { type: string }
+        color: { type: [string, "null"] }
+        size: { type: string }
+        quantity: { type: integer }
+        last_updated: { type: [string, "null"], format: date-time }
+        availability: { $ref: "#/components/schemas/Availability" }
+
+    Order:
+      type: object
+      properties:
+        order_id: { type: integer }
+        customer_id: { type: integer }
+        delivery_address_id: { type: integer }
+        invoice_address_id: { type: integer }
+        order_date: { type: string, format: date-time }
+        order_status:
+          type: string
+          enum: [created, paid, packed, shipped, delivered, cancelled, returned]
+        total_cost: { type: number }
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              order_item_id: { type: integer }
+              order_id: { type: integer }
+              variant_id: { type: integer }
+              quantity: { type: integer }
+              unit_price: { type: number }

@@ -87,6 +87,17 @@ describe("/api/inventory/products/[productId]", () => {
 			expect(getConnection).not.toHaveBeenCalled();
 		});
 
+		it("returns 401 when signed out", async () => {
+			authorizeInventoryAccess.mockResolvedValue({
+				ok: false,
+				status: 401,
+				error: "Authentication required",
+			});
+			const res = await GET(new Request("http://localhost/x"), ctx("1"));
+			expect(res.status).toBe(401);
+			expect(getConnection).not.toHaveBeenCalled();
+		});
+
 		it("returns 403 when access is denied", async () => {
 			authorizeInventoryAccess.mockResolvedValue({ ok: false, status: 403, error: "Forbidden" });
 			const res = await GET(new Request("http://localhost/x"), ctx("1"));
@@ -125,9 +136,25 @@ describe("/api/inventory/products/[productId]", () => {
 			expect(getConnection).not.toHaveBeenCalled();
 		});
 
-		it("rejects an empty name", async () => {
+		it("rejects an empty name and names the field", async () => {
 			const res = await patch("1", { productName: " " });
 			expect(res.status).toBe(400);
+			expect((await res.json()).field).toBe("productName");
+		});
+
+		it("rejects invalid JSON", async () => {
+			const res = await PATCH(
+				new Request("http://localhost/x", { method: "PATCH", body: "not json" }),
+				ctx("1")
+			);
+			expect(res.status).toBe(400);
+			expect(getConnection).not.toHaveBeenCalled();
+		});
+
+		it("returns 400 for an invalid id", async () => {
+			const res = await patch("abc", { productName: "A" });
+			expect(res.status).toBe(400);
+			expect(getConnection).not.toHaveBeenCalled();
 		});
 
 		it("returns 404 and rolls back for an unknown product", async () => {
@@ -146,7 +173,7 @@ describe("/api/inventory/products/[productId]", () => {
 	});
 
 	describe("DELETE", () => {
-		it("deletes a product without orders", async () => {
+		it("deletes a product without orders and writes an audit log", async () => {
 			const c = mockConnection((sql) =>
 				sql.includes("COUNT(*)") ? [{ n: BigInt(0) }] : { affectedRows: 1 }
 			);
@@ -157,6 +184,10 @@ describe("/api/inventory/products/[productId]", () => {
 			expect(c.query).toHaveBeenCalledWith(
 				expect.stringContaining("DELETE FROM Products"),
 				[1]
+			);
+			expect(c.query).toHaveBeenCalledWith(
+				expect.stringContaining("INSERT INTO Audit_log"),
+				expect.arrayContaining([1, "delete_product", "Products", 1])
 			);
 			expect(c.commit).toHaveBeenCalledOnce();
 		});
@@ -182,6 +213,12 @@ describe("/api/inventory/products/[productId]", () => {
 			);
 			const res = await DELETE(new Request("http://localhost/x"), ctx("999"));
 			expect(res.status).toBe(404);
+		});
+
+		it("returns 400 for an invalid id", async () => {
+			const res = await DELETE(new Request("http://localhost/x"), ctx("abc"));
+			expect(res.status).toBe(400);
+			expect(getConnection).not.toHaveBeenCalled();
 		});
 
 		it("returns 403 when access is denied", async () => {

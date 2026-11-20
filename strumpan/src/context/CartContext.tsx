@@ -5,7 +5,11 @@ import { OrderItemInput, calculateOrderPricing, PricingSummary } from "@/lib/pri
 
 export interface CartItem extends OrderItemInput {
   id: string;
+  availableStock: number;
 }
+export type CartItemInput = Omit<CartItem, "quantity"> & {
+  quantity?: number;
+};
 
 export interface CartContextType {
   items: CartItem[];
@@ -34,20 +38,24 @@ export const DEFAULT_DEMO_ITEMS: CartItem[] = [
   {
     id: "1",
     title: "Klassisk Ullstrumpa - Svart",
+    description: "beskrivning",
     price: 129,
     quantity: 2,
     size: "40-45",
     color: "Svart",
     picture_url: "https://images.unsplash.com/photo-1586350977771-b3b0abd50c82?auto=format&fit=crop&w=300&q=80",
+    availableStock: 5
   },
   {
     id: "2",
     title: "Randig Bomullsstrumpa - Blå/Vit",
+    description: "beskrivning",
     price: 89,
     quantity: 1,
     size: "40-45",
     color: "Marinblå",
     picture_url: "https://images.unsplash.com/photo-1582966772680-860e372bb558?auto=format&fit=crop&w=300&q=80",
+    availableStock:10
   },
 ];
 
@@ -94,18 +102,30 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     return calculateOrderPricing(items, selectedCountry);
   }, [items, selectedCountry]);
 
-  function addItem(item: Omit<CartItem, "quantity"> & { quantity?: number }) {
-    const qtyToAdd = item.quantity && item.quantity > 0 ? item.quantity : 1;
-    setItems((prev) => {
-      const existingIndex = prev.findIndex((i) => i.id === item.id);
-      if (existingIndex > -1) {
-        return prev.map((i, index) =>
-          index === existingIndex ? { ...i, quantity: i.quantity + qtyToAdd } : i
-        );
-      }
-      return [...prev, { ...item, quantity: qtyToAdd }];
-    });
-  }
+  function addItem(item: CartItemInput) {
+  const qtyToAdd = item.quantity && item.quantity > 0
+    ? item.quantity
+    : 1;
+
+  setItems((prev) => {
+    const existingItem = prev.find((i) => i.id === item.id);
+    const currentQuantity = existingItem?.quantity ?? 0;
+    const newQuantity = Math.min(currentQuantity + qtyToAdd, item.availableStock);
+
+    if (existingItem) {
+      return prev.map((i) =>
+        i.id === item.id
+          ? { ...i, quantity: newQuantity }
+          : i
+      );
+    }
+
+    return [
+      ...prev,
+      { ...item, quantity: Math.min(qtyToAdd, item.availableStock) },
+    ];
+  });
+}
 
   function removeItem(id: string) {
     setItems((prev) => prev.filter((i) => i.id !== id));
@@ -117,7 +137,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       return;
     }
     setItems((prev) =>
-      prev.map((i) => (i.id === id ? { ...i, quantity } : i))
+      prev.map((i) =>
+        i.id === id ? { ...i, quantity: quantity } : i
+      )
     );
   }
 
@@ -146,7 +168,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }
 
   function addOneToCart(id: string) {
-    addItem({ id, title: `Strumpa ${id}`, price: 99 });
+    addItem({ id, title: `Strumpa ${id}`, description: "beskrivning", price: 99, availableStock: 2 });
   }
 
   function removeOneFromCart(id: string) {

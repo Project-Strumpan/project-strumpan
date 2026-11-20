@@ -6,26 +6,31 @@ import { cleanup } from "@testing-library/react";
 import { afterEach } from "vitest";
 
 import AddToCart from "./AddToCart";
-import { CartProvider } from "@/app/CartContext";
+import { CartItem, CartProvider } from "@/app/CartContext";
+import { ProductWithVariants } from "@/types/product";
 
-const product = {
+const product: CartItem = {
     id: "1",
     title: "Test product",
     description: "Test description",
     price: 100,
-    stock: 50,
+    quantity: 0,
+    availableStock: 10,
+    picture_url:
+      "https://images.unsplash.com/photo-1503602642458-232111445657?auto=format&fit=crop&w=300&q=80",
 };
 
 function renderComponent() {
     return render(
         <CartProvider>
-            <AddToCart product={product} />
+            <AddToCart product={product} available={true} />
         </CartProvider>
     );
 }
 
 afterEach(() => {
     cleanup();
+    localStorage.clear();
 });
 
 describe("AddToCart", () => {
@@ -34,7 +39,7 @@ describe("AddToCart", () => {
         renderComponent();
 
         expect(
-            screen.getByRole("button", { name: /add to cart/i })
+            screen.getByText("Lägg i varukorg")
         ).toBeInTheDocument();
 
         expect(
@@ -52,15 +57,15 @@ describe("AddToCart", () => {
         renderComponent();
 
         await user.click(
-            screen.getByRole("button", { name: /add to cart/i })
+            screen.getByText("Lägg i varukorg")
         );
 
         expect(
-            screen.getByRole("button", { name: /increase quantity/i })
+            screen.getByRole("button", { name: /Öka antal/i })
         ).toBeInTheDocument();
 
         expect(
-            screen.getByRole("button", { name: /decrease quantity/i })
+            screen.getByRole("button", { name: /Minska antal/i })
         ).toBeInTheDocument();
     });
 
@@ -70,51 +75,50 @@ describe("AddToCart", () => {
         renderComponent();
 
         await user.click(
-            screen.getByRole("button", { name: /add to cart/i })
+            screen.getByText("Lägg i varukorg")
         );
 
         await user.click(
-            screen.getByRole("button", { name: /increase quantity/i })
+            screen.getByRole("button", { name: /Öka antal/i })
         );
 
-        expect(screen.getByText("In Cart: 2")).toBeInTheDocument();
+        expect(screen.getByText("2 st i varukorgen")).toBeInTheDocument();
     });
 
     it("The customer should be able to decrease the quantity of product to be added to the cart", async () => {
         const user = userEvent.setup();
 
         renderComponent();
-
         await user.click(
-            screen.getByRole("button", { name: /add to cart/i })
+            screen.getByText("Lägg i varukorg")
         );
 
         await user.click(
-            screen.getByRole("button", { name: /increase quantity/i })
+            screen.getByRole("button", { name: /Öka antal/i })
         );
 
         await user.click(
-            screen.getByRole("button", { name: /decrease quantity/i })
+            screen.getByRole("button", { name: /Minska antal/i })
         );
 
-        expect(screen.getByText("In Cart: 1")).toBeInTheDocument();
+        expect(screen.getByText("1 st i varukorgen")).toBeInTheDocument();
     });
  
     it("Buttons to change the quantity of the product shouldn’t be visible upon opening the page", async () => {
         const user = userEvent.setup();
 
         renderComponent();
-
+        screen.debug()
         await user.click(
-            screen.getByRole("button", { name: /add to cart/i })
+            screen.getByText("Lägg i varukorg")
         );
 
         await user.click(
-            screen.getByRole("button", { name: /decrease quantity/i })
+            screen.getByRole("button", { name: /Minska antal/i })
         );
 
         expect(
-            screen.getByRole("button", { name: /add to cart/i })
+            screen.getByText("Lägg i varukorg")
         ).toBeInTheDocument();
     });
 });

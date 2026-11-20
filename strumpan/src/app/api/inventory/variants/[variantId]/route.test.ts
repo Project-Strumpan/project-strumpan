@@ -80,9 +80,25 @@ describe("/api/inventory/variants/[variantId]", () => {
 			expect(getConnection).not.toHaveBeenCalled();
 		});
 
-		it("rejects an empty sku", async () => {
+		it("rejects an empty sku and names the field", async () => {
 			const res = await patch("10", { sku: " " });
 			expect(res.status).toBe(400);
+			expect((await res.json()).field).toBe("sku");
+		});
+
+		it("rejects invalid JSON", async () => {
+			const res = await PATCH(
+				new Request("http://localhost/x", { method: "PATCH", body: "not json" }),
+				ctx("10")
+			);
+			expect(res.status).toBe(400);
+			expect(getConnection).not.toHaveBeenCalled();
+		});
+
+		it("returns 400 for an invalid id", async () => {
+			const res = await patch("abc", { sku: "A" });
+			expect(res.status).toBe(400);
+			expect(getConnection).not.toHaveBeenCalled();
 		});
 
 		it("returns 404 for an unknown variant", async () => {
@@ -92,13 +108,25 @@ describe("/api/inventory/variants/[variantId]", () => {
 			expect(c.rollback).toHaveBeenCalledOnce();
 		});
 
-		it("returns 409 on duplicate SKU", async () => {
+		it("returns 409 on duplicate SKU and names the field", async () => {
 			const c = mockConnection(() => {
 				throw Object.assign(new Error("dup"), { code: "ER_DUP_ENTRY" });
 			});
 			const res = await patch("10", { sku: "TAKEN" });
 			expect(res.status).toBe(409);
+			expect((await res.json()).field).toBe("sku");
 			expect(c.rollback).toHaveBeenCalledOnce();
+		});
+
+		it("returns 401 when signed out", async () => {
+			authorizeInventoryAccess.mockResolvedValue({
+				ok: false,
+				status: 401,
+				error: "Authentication required",
+			});
+			const res = await patch("10", { sku: "A" });
+			expect(res.status).toBe(401);
+			expect(getConnection).not.toHaveBeenCalled();
 		});
 
 		it("returns 403 when access is denied", async () => {
@@ -110,7 +138,7 @@ describe("/api/inventory/variants/[variantId]", () => {
 	});
 
 	describe("DELETE", () => {
-		it("deletes a variant without orders", async () => {
+		it("deletes a variant without orders and writes an audit log", async () => {
 			const c = mockConnection((sql) =>
 				sql.includes("COUNT(*)") ? [{ n: BigInt(0) }] : { affectedRows: 1 }
 			);
@@ -121,6 +149,10 @@ describe("/api/inventory/variants/[variantId]", () => {
 			expect(c.query).toHaveBeenCalledWith(
 				expect.stringContaining("DELETE FROM Product_variants"),
 				[10]
+			);
+			expect(c.query).toHaveBeenCalledWith(
+				expect.stringContaining("INSERT INTO Audit_log"),
+				expect.arrayContaining([1, "delete_variant", "Product_variants", 10])
 			);
 			expect(c.commit).toHaveBeenCalledOnce();
 		});

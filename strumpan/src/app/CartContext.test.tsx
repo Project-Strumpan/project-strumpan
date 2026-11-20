@@ -5,21 +5,29 @@ import userEvent from "@testing-library/user-event";
 import "@testing-library/jest-dom/vitest";
 import { cleanup } from "@testing-library/react";
 import { afterEach } from "vitest";
-
 import { CartProvider, CartContext } from "./CartContext";
+import { CartItem } from "./CartContext";
 
-// Mock product data used for calculating the total cost
-vi.mock("../productsStore", () => ({
-    getProductData: (id: string) => {
-        const products = [
-            { id: "1", title: "Product 1", price: 100, stock: 5 },
-            { id: "2", title: "Product 2", price: 200, stock: 10},
-        ];
+// Test products using the new CartItem structure
+const product1: Omit<CartItem, "quantity"> = {
+    id: "1",
+    title: "Test product 1",
+    description: "Description 1",
+    picture_url: "/test1.jpg",
+    price: 100,
+    size: "40-45",
+    color: "Marinblå",
+    availableStock: 5,
+};
 
-        return products.find(product => product.id === id);
-    },
-    productsArray: [],
-}));
+const product2: Omit<CartItem, "quantity"> = {
+  id: "2",
+  title: "Test product 2",
+  description: "Description 2",
+  picture_url: "/test2.jpg",
+  price: 200,
+  availableStock: 50
+};
 
 function TestComponent() {
     const cart = useContext(CartContext);
@@ -29,11 +37,11 @@ function TestComponent() {
     return (
         <div>
             <p data-testid="quantity-1">
-                {cart.getProductQuantity("1")}
+                {cart.getProductQuantity(product1.id)}
             </p>
 
             <p data-testid="quantity-2">
-                {cart.getProductQuantity("2")}
+                {cart.getProductQuantity(product2.id)}
             </p>
 
             <p data-testid="total-cost">
@@ -44,19 +52,26 @@ function TestComponent() {
                 {cart.items.length}
             </p>
 
-            <button onClick={() => cart.addOneToCart("1")}>
+            <button onClick={() => cart.addItem(product1)}>
                 Add product 1
             </button>
+            <button onClick={() => cart.updateQuantity(product1.id, cart.getProductQuantity(product1.id) + 1)}>
+                Increase product 1
+            </button>
 
-            <button onClick={() => cart.addOneToCart("2")}>
+            <button onClick={() => cart.addItem(product2)}>
                 Add product 2
             </button>
 
-            <button onClick={() => cart.removeOneFromCart("1")}>
+            <button onClick={() => cart.updateQuantity(product2.id, cart.getProductQuantity(product2.id) + 1)}>
+                Increase product 2
+            </button>
+
+            <button onClick={() => cart.removeOneFromCart(product1.id)}>
                 Remove one product 1
             </button>
 
-            <button onClick={() => cart.deleteFromCart("1")}>
+            <button onClick={() => cart.deleteFromCart(product1.id)}>
                 Delete product 1
             </button>
         </div>
@@ -76,7 +91,7 @@ function NavigationTest() {
                 Navigate to another page
             </button>
 
-            <button onClick={() => cart.addOneToCart("1")}>
+            <button onClick={() => cart.addItem(product1)}>
                 Add product
             </button>
 
@@ -99,6 +114,7 @@ function renderCart() {
 
 afterEach(() => {
     cleanup();
+    localStorage.clear()
 });
 
 describe("CartContext", () => {
@@ -224,6 +240,7 @@ describe("CartContext", () => {
             screen.getByRole("button", { name: "Add product 1" })
         );
     }
+    screen.debug();
 
     expect(screen.getByTestId("quantity-1")).toHaveTextContent("5");
     });
