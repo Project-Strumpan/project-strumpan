@@ -8,13 +8,29 @@ type CatalogProductItem = CatalogueProduct & {
   variants?: ProductVariant[];
 };
 
+function resolveImageSrc(imageUrl?: string | null): string | null {
+  if (!imageUrl) return null;
+
+  const trimmed = imageUrl.trim();
+  if (!trimmed) return null;
+
+  const fullPath =
+    trimmed.startsWith("http://") ||
+    trimmed.startsWith("https://") ||
+    trimmed.startsWith("/")
+      ? trimmed
+      : `/media/images/socks/${trimmed}`;
+
+  return encodeURI(fullPath);
+}
+
 export default function ProductCatalog() {
   const [products, setProducts] = useState<CatalogProductItem[]>([]);
   const [selectedSize, setSelectedSize] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  
+
   // Håll koll på vilka produkt-ID:n vars bilder misslyckats med att ladda
   const [imageErrors, setImageErrors] = useState<Record<number, boolean>>({});
 
@@ -25,10 +41,10 @@ export default function ProductCatalog() {
         if (!res.ok) throw new Error("Could not fetch products");
         const baseProducts: CatalogueProduct[] = await res.json();
 
-        const products = baseProducts.filter((e : CatalogueProduct) => e.price > 0);
+        const validProducts = baseProducts.filter((e: CatalogueProduct) => e.price > 0);
 
         const productsWithVariants = await Promise.all(
-          products.map(async (product: CatalogueProduct) => {
+          validProducts.map(async (product: CatalogueProduct) => {
             try {
               const detailRes = await fetch(`/api/products/${product.product_id}`);
               if (detailRes.ok) {
@@ -174,6 +190,7 @@ export default function ProductCatalog() {
               new Set(product.variants?.map((v: ProductVariant) => v.size) || [])
             );
 
+            const resolvedSrc = resolveImageSrc(product.image_url);
             const hasImageError = imageErrors[product.product_id];
 
             return (
@@ -185,9 +202,9 @@ export default function ProductCatalog() {
                 <div>
                   {/* Bildruta som visar bild om den finns och fungerar, annars "Bild saknas" */}
                   <div className="relative w-full h-48 mb-4 overflow-hidden rounded-lg bg-gray-100 dark:bg-zinc-800 flex items-center justify-center">
-                    {product.image_url && !hasImageError ? (
+                    {resolvedSrc && !hasImageError ? (
                       <img
-                        src={product.image_url}
+                        src={resolvedSrc}
                         alt={product.name}
                         onError={() => {
                           setImageErrors((prev) => ({
