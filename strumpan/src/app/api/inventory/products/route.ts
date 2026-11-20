@@ -1,25 +1,25 @@
 /*
  * POST create product with variants + inventory rows (PRO-73)
- * Body: { productName, categoryId, price, variants: [{ sku, color, size, quantity }] }
+ * Body: { productName, categoryId, variants: [{ sku, color, size, quantity }] }
+ * Price is not accepted: inventory staff may not set prices. New products get
+ * price 0 and must stay hidden from shoppers until the owner sets a price.
+ * Errors: { error, field } where field names the invalid input.
+ * A duplicate SKU is reported as variants.<index>.sku.
 */
 
 import { NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import { authorizeInventoryAccess } from "@/lib/inventory/access";
-import { dbErrorResponse, writeAudit } from "@/lib/inventory/helpers";
+import {
+    dbErrorResponse,
+    fieldError,
+    isText,
+    parseVariant,
+    writeAudit,
+} from "@/lib/inventory/helpers";
+import type { VariantInput } from "@/lib/inventory/helpers";
 
-type VariantInput = {
-    sku: string;
-    color: string | null;
-    size: string;
-    quantity: number;
-};
-
-const isText = (v: unknown, max: number): v is string =>
-    typeof v === "string" && v.trim() !== "" && v.length <= max;
-
-const isQty = (v: unknown): v is number =>
-    typeof v === "number" && Number.isSafeInteger(v) && v >= 0 && v <= 2147483647;
+const ALLOWED_KEYS = ["productName", "categoryId", "variants"];
 
 export async function POST(request: Request) {
     const access = await authorizeInventoryAccess();
@@ -33,55 +33,52 @@ export async function POST(request: Request) {
     } catch {
         return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
     }
+    if (body === null || typeof body !== "object" || Array.isArray(body)) {
+        return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+    }
 
-    const { productName, categoryId, price, variants } = body ?? {};
+    const forbidden = Object.keys(body).find((k) => !ALLOWED_KEYS.includes(k));
+    if (forbidden) {
+        return fieldError(forbidden, "Field not allowed");
+    }
 
-    if (
-        !isText(productName, 255) ||
-        typeof categoryId !== "number" ||
-        !Number.isSafeInteger(categoryId) ||
-        categoryId < 1 ||
-        typeof price !== "number" ||
-        !Number.isFinite(price) ||
-        price < 0 ||
-        !Array.isArray(variants) ||
-        variants.length === 0
-    ) {
-        return NextResponse.json({ error: "Invalid product data" }, { status: 400 });
+    const { productName, categoryId, variants } = body;
+
+    if (!isText(productName, 255)) {
+        return fieldError("productName", "Product name is required (max 255 characters)");
+    }
+    if (typeof categoryId !== "number" || !Number.isSafeInteger(categoryId) || categoryId < 1) {
+        return fieldError("categoryId", "Choose a category");
+    }
+    if (!Array.isArray(variants) || variants.length === 0) {
+        return fieldError("variants", "Add at least one variant");
     }
 
     const parsed: VariantInput[] = [];
-    for (const raw of variants as Record<string, unknown>[]) {
-        const color = raw.color === null || raw.color === "" ? null : raw.color;
-        if (
-            !isText(raw.sku, 100) ||
-            !isText(raw.size, 50) ||
-            (color !== null && !isText(color, 100)) ||
-            !isQty(raw.quantity)
-        ) {
-            return NextResponse.json({ error: "Invalid variant data" }, { status: 400 });
+    for (let i = 0; i < variants.length; i++) {
+        const result = parseVariant(variants[i], `variants.${i}`);
+        if (!result.ok) {
+            return fieldError(result.field, result.error);
         }
-        parsed.push({
-            sku: raw.sku.trim(),
-            size: raw.size.trim(),
-            color: color === null ? null : (color as string).trim(),
-            quantity: raw.quantity,
-        });
+        parsed.push(result.value);
     }
 
     let connection;
+    let variantIndex = -1;
     try {
         connection = await pool.getConnection();
         await connection.beginTransaction();
 
         const product = await connection.query(
-            "INSERT INTO Products (category_id, product_name, price) VALUES (?, ?, ?)",
-            [categoryId, productName.trim(), price]
+            "INSERT INTO Products (category_id, product_name, price) VALUES (?, ?, 0)",
+            [categoryId, productName.trim()]
         );
         const productId = Number(product.insertId);
 
         const variantIds: number[] = [];
-        for (const v of parsed) {
+        for (let i = 0; i < parsed.length; i++) {
+            const v = parsed[i];
+            variantIndex = i;
             const variant = await connection.query(
                 `INSERT INTO Product_variants (product_id, product_variant_size, color, sku)
                  VALUES (?, ?, ?, ?)`,
@@ -107,6 +104,9 @@ export async function POST(request: Request) {
         );
     } catch (error) {
         try { await connection?.rollback(); } catch { /* ignore */ }
+        if ((error as { code?: string }).code === "ER_DUP_ENTRY" && variantIndex >= 0) {
+            return fieldError(`variants.${variantIndex}.sku`, "SKU already exists", 409);
+        }
         return dbErrorResponse(error, "Failed to create product");
     } finally {
         connection?.release();

@@ -1,7 +1,15 @@
+/*
+ * PATCH update variant sku/colour/size, DELETE variant without orders (PRO-73)
+ * Editable fields (allowlist): sku, color, size.
+ * Stock quantity is changed via /api/inventory/[variantId] (PRO-71).
+ * Price, product_id and marketing fields are not editable by inventory staff.
+ * Errors: { error, field } where field names the invalid input.
+*/
+
 import { NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import { authorizeInventoryAccess } from "@/lib/inventory/access";
-import { dbErrorResponse, parseId, writeAudit } from "@/lib/inventory/helpers";
+import { dbErrorResponse, fieldError, parseId, writeAudit } from "@/lib/inventory/helpers";
 
 type Context = { params: Promise<{ variantId: string }> };
 
@@ -27,7 +35,7 @@ export async function PATCH(request: Request, { params }: Context) {
     }
 
     const keys = Object.keys(body ?? {});
-    if (keys.length === 0 || keys.some((k) => !(k in COLUMNS))) {
+    if (keys.length === 0 || keys.some((k) => !Object.prototype.hasOwnProperty.call(COLUMNS, k))) {
         return NextResponse.json({ error: "Field not allowed" }, { status: 400 });
     }
 
@@ -41,7 +49,7 @@ export async function PATCH(request: Request, { params }: Context) {
             continue;
         }
         if (typeof value !== "string" || value.trim() === "" || value.length > 100) {
-            return NextResponse.json({ error: `Invalid ${key}` }, { status: 400 });
+            return fieldError(key, `Invalid ${key}`);
         }
         sets.push(`${COLUMNS[key]} = ?`);
         values.push(value.trim());
