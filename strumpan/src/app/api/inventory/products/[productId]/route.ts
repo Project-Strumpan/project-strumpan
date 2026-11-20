@@ -3,6 +3,7 @@
  * Editable fields (allowlist): productName.
  * Price, category and marketing fields are owner-only.
  * Errors: { error, field } where field names the invalid input.
+ * Audit (PRO-75): PATCH logs { before, after }; DELETE logs a { before } snapshot.
 */
 
 import { NextResponse } from "next/server";
@@ -23,6 +24,16 @@ type Row = {
     color: string | null;
     size: string | null;
     quantity: number | string;
+};
+
+type SnapshotRow = {
+    product_name: string;
+    category_id: number;
+    variant_id: number | null;
+    sku: string | null;
+    color: string | null;
+    size: string | null;
+    quantity: number | string | null;
 };
 
 export async function GET(_request: Request, { params }: Context) {
@@ -99,16 +110,23 @@ export async function PATCH(request: Request, { params }: Context) {
     try {
         connection = await pool.getConnection();
         await connection.beginTransaction();
-        const result = await connection.query(
-            "UPDATE Products SET product_name = ? WHERE product_id = ?",
-            [name.trim(), productId]
+
+        const before = await connection.query<Array<{ product_name: string }>>(
+            "SELECT product_name FROM Products WHERE product_id = ? FOR UPDATE",
+            [productId]
         );
-        if (result.affectedRows === 0) {
+        if (before.length === 0) {
             await connection.rollback();
             return NextResponse.json({ error: "Product not found" }, { status: 404 });
         }
+
+        await connection.query(
+            "UPDATE Products SET product_name = ? WHERE product_id = ?",
+            [name.trim(), productId]
+        );
         await writeAudit(connection, access.adminId, "update_product", "Products", productId, {
-            productName: name.trim(),
+            before: { productName: before[0].product_name },
+            after: { productName: name.trim() },
         });
         await connection.commit();
         return NextResponse.json({ product_id: productId, productName: name.trim() });
@@ -133,6 +151,23 @@ export async function DELETE(_request: Request, { params }: Context) {
         connection = await pool.getConnection();
         await connection.beginTransaction();
 
+        const snapshot = await connection.query<SnapshotRow[]>(
+            `SELECT p.product_name, p.category_id,
+                    pv.variant_id, pv.sku, pv.color, pv.product_variant_size AS size,
+                    i.quantity
+             FROM Products p
+             LEFT JOIN Product_variants pv ON pv.product_id = p.product_id
+             LEFT JOIN Inventory i ON i.variant_id = pv.variant_id
+             WHERE p.product_id = ?
+             ORDER BY pv.variant_id ASC
+             FOR UPDATE`,
+            [productId]
+        );
+        if (snapshot.length === 0) {
+            await connection.rollback();
+            return NextResponse.json({ error: "Product not found" }, { status: 404 });
+        }
+
         const used = await connection.query(
             `SELECT COUNT(*) AS n FROM Order_items oi
              JOIN Product_variants pv ON pv.variant_id = oi.variant_id
@@ -147,15 +182,22 @@ export async function DELETE(_request: Request, { params }: Context) {
             );
         }
 
-        const result = await connection.query(
-            "DELETE FROM Products WHERE product_id = ?",
-            [productId]
-        );
-        if (result.affectedRows === 0) {
-            await connection.rollback();
-            return NextResponse.json({ error: "Product not found" }, { status: 404 });
-        }
-        await writeAudit(connection, access.adminId, "delete_product", "Products", productId, {});
+        await connection.query("DELETE FROM Products WHERE product_id = ?", [productId]);
+        await writeAudit(connection, access.adminId, "delete_product", "Products", productId, {
+            before: {
+                productName: snapshot[0].product_name,
+                categoryId: snapshot[0].category_id,
+                variants: snapshot
+                    .filter((r) => r.variant_id !== null)
+                    .map((r) => ({
+                        variantId: r.variant_id,
+                        sku: r.sku,
+                        color: r.color,
+                        size: r.size,
+                        quantity: Number(r.quantity ?? 0),
+                    })),
+            },
+        });
         await connection.commit();
         return NextResponse.json({ product_id: productId, deleted: true });
     } catch (error) {

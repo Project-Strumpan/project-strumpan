@@ -19,8 +19,7 @@ export async function writeAudit(
     details: object
 ) {
     if (adminId === undefined) {
-        console.warn("Skipping audit log because no local admin record exists.");
-        return;
+        throw new Error("Cannot write audit log: no local admin record for the session user");
     }
 
     await connection.query(

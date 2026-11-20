@@ -57,7 +57,6 @@ describe("PATCH /api/inventory/[variantId]", () => {
     beforeEach(() => {
         vi.clearAllMocks();
         vi.spyOn(console, "error").mockImplementation(() => { });
-        vi.spyOn(console, "warn").mockImplementation(() => { });
         authorizeInventoryAccess.mockResolvedValue({ ok: true, adminId: 3 });
     });
 
@@ -178,19 +177,23 @@ describe("PATCH /api/inventory/[variantId]", () => {
         expect(connection.release).toHaveBeenCalledOnce();
     });
 
-    it("still updates stock but skips the audit entry when there is no local admin record", async () => {
+    it("rolls back and returns 500 when there is no local admin record", async () => {
         authorizeInventoryAccess.mockResolvedValue({ ok: true });
         const connection = mockConnection();
 
         const response = await patch({ quantity: 8, expectedQuantity: 5 });
 
-        expect(response.status).toBe(200);
+        expect(response.status).toBe(500);
+        expect(await response.json()).toEqual({ error: "Failed to update stock" });
         expect(connection.query).not.toHaveBeenCalledWith(
             expect.stringContaining("INSERT INTO Audit_log"),
             expect.anything()
         );
-        expect(connection.commit).toHaveBeenCalledOnce();
+        expect(connection.rollback).toHaveBeenCalledOnce();
+        expect(connection.commit).not.toHaveBeenCalled();
+        expect(connection.release).toHaveBeenCalledOnce();
     });
+
 
     it("rolls back and returns 500 when the audit insert fails", async () => {
         const connection = mockConnection({ auditError: new Error("audit failed") });

@@ -47,6 +47,7 @@ const productRows = [
 describe("/api/inventory/products/[productId]", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		vi.spyOn(console, "error").mockImplementation(() => {});
 		authorizeInventoryAccess.mockResolvedValue({ ok: true, adminId: 1 });
 	});
 
@@ -107,8 +108,11 @@ describe("/api/inventory/products/[productId]", () => {
 	});
 
 	describe("PATCH", () => {
-		it("renames the product and writes an audit log", async () => {
-			const c = mockConnection();
+		const patchImpl = (sql: string) =>
+			sql.includes("SELECT product_name") ? [{ product_name: "Old name" }] : { affectedRows: 1 };
+
+		it("renames the product and logs before and after values", async () => {
+			const c = mockConnection(patchImpl);
 
 			const res = await patch("1", { productName: "  New name " });
 
@@ -119,9 +123,32 @@ describe("/api/inventory/products/[productId]", () => {
 			);
 			expect(c.query).toHaveBeenCalledWith(
 				expect.stringContaining("INSERT INTO Audit_log"),
-				expect.arrayContaining([1, "update_product", "Products", 1])
+				[
+					1,
+					"update_product",
+					"Products",
+					1,
+					JSON.stringify({
+						before: { productName: "Old name" },
+						after: { productName: "New name" },
+					}),
+				]
 			);
 			expect(c.commit).toHaveBeenCalledOnce();
+		});
+
+		it("rolls back and returns 500 when the audit insert fails", async () => {
+			const c = mockConnection((sql) => {
+				if (sql.includes("INSERT INTO Audit_log")) throw new Error("audit failed");
+				return patchImpl(sql);
+			});
+
+			const res = await patch("1", { productName: "New name" });
+
+			expect(res.status).toBe(500);
+			expect(c.rollback).toHaveBeenCalledOnce();
+			expect(c.commit).not.toHaveBeenCalled();
+			expect(c.release).toHaveBeenCalledOnce();
 		});
 
 		it.each([
@@ -158,10 +185,11 @@ describe("/api/inventory/products/[productId]", () => {
 		});
 
 		it("returns 404 and rolls back for an unknown product", async () => {
-			const c = mockConnection(() => ({ affectedRows: 0 }));
+			const c = mockConnection(() => []);
 			const res = await patch("999", { productName: "A" });
 			expect(res.status).toBe(404);
 			expect(c.rollback).toHaveBeenCalledOnce();
+			expect(c.commit).not.toHaveBeenCalled();
 		});
 
 		it("returns 403 when access is denied", async () => {
@@ -173,10 +201,21 @@ describe("/api/inventory/products/[productId]", () => {
 	});
 
 	describe("DELETE", () => {
-		it("deletes a product without orders and writes an audit log", async () => {
-			const c = mockConnection((sql) =>
-				sql.includes("COUNT(*)") ? [{ n: BigInt(0) }] : { affectedRows: 1 }
-			);
+		const snapshotRows = [
+			{
+				product_name: "Sock", category_id: 2,
+				variant_id: 10, sku: "S-BLK-M", color: "Black", size: "M", quantity: "12",
+			},
+		];
+
+		const deleteImpl = (orders: number, rows: unknown[] = snapshotRows) => (sql: string) => {
+			if (sql.includes("COUNT(*)")) return [{ n: BigInt(orders) }];
+			if (sql.includes("FROM Products p")) return rows;
+			return { affectedRows: 1 };
+		};
+
+		it("deletes a product without orders and logs a snapshot of what was removed", async () => {
+			const c = mockConnection(deleteImpl(0));
 
 			const res = await DELETE(new Request("http://localhost/x"), ctx("1"));
 
@@ -187,15 +226,52 @@ describe("/api/inventory/products/[productId]", () => {
 			);
 			expect(c.query).toHaveBeenCalledWith(
 				expect.stringContaining("INSERT INTO Audit_log"),
-				expect.arrayContaining([1, "delete_product", "Products", 1])
+				[
+					1,
+					"delete_product",
+					"Products",
+					1,
+					JSON.stringify({
+						before: {
+							productName: "Sock",
+							categoryId: 2,
+							variants: [
+								{ variantId: 10, sku: "S-BLK-M", color: "Black", size: "M", quantity: 12 },
+							],
+						},
+					}),
+				]
 			);
 			expect(c.commit).toHaveBeenCalledOnce();
 		});
 
-		it("returns 409 and deletes nothing when the product has orders", async () => {
-			const c = mockConnection((sql) =>
-				sql.includes("COUNT(*)") ? [{ n: BigInt(2) }] : { affectedRows: 1 }
+		it("logs an empty variant list for a product without variants", async () => {
+			const c = mockConnection(
+				deleteImpl(0, [
+					{
+						product_name: "Empty", category_id: 2,
+						variant_id: null, sku: null, color: null, size: null, quantity: null,
+					},
+				])
 			);
+
+			const res = await DELETE(new Request("http://localhost/x"), ctx("1"));
+
+			expect(res.status).toBe(200);
+			expect(c.query).toHaveBeenCalledWith(
+				expect.stringContaining("INSERT INTO Audit_log"),
+				[
+					1,
+					"delete_product",
+					"Products",
+					1,
+					JSON.stringify({ before: { productName: "Empty", categoryId: 2, variants: [] } }),
+				]
+			);
+		});
+
+		it("returns 409 and deletes nothing when the product has orders", async () => {
+			const c = mockConnection(deleteImpl(2));
 
 			const res = await DELETE(new Request("http://localhost/x"), ctx("1"));
 
@@ -204,15 +280,32 @@ describe("/api/inventory/products/[productId]", () => {
 				expect.stringContaining("DELETE FROM Products"),
 				expect.anything()
 			);
+			expect(c.query).not.toHaveBeenCalledWith(
+				expect.stringContaining("INSERT INTO Audit_log"),
+				expect.anything()
+			);
 			expect(c.rollback).toHaveBeenCalledOnce();
 		});
 
+		it("rolls back and keeps the product when the audit insert fails", async () => {
+			const c = mockConnection((sql) => {
+				if (sql.includes("INSERT INTO Audit_log")) throw new Error("audit failed");
+				return deleteImpl(0)(sql);
+			});
+
+			const res = await DELETE(new Request("http://localhost/x"), ctx("1"));
+
+			expect(res.status).toBe(500);
+			expect(c.rollback).toHaveBeenCalledOnce();
+			expect(c.commit).not.toHaveBeenCalled();
+			expect(c.release).toHaveBeenCalledOnce();
+		});
+
 		it("returns 404 for an unknown product", async () => {
-			mockConnection((sql) =>
-				sql.includes("COUNT(*)") ? [{ n: BigInt(0) }] : { affectedRows: 0 }
-			);
+			const c = mockConnection(deleteImpl(0, []));
 			const res = await DELETE(new Request("http://localhost/x"), ctx("999"));
 			expect(res.status).toBe(404);
+			expect(c.rollback).toHaveBeenCalledOnce();
 		});
 
 		it("returns 400 for an invalid id", async () => {
