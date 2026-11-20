@@ -25,8 +25,10 @@ export default function ProductCatalog() {
         if (!res.ok) throw new Error("Could not fetch products");
         const baseProducts: CatalogueProduct[] = await res.json();
 
+        const products = baseProducts.filter((e : CatalogueProduct) => e.price > 0);
+
         const productsWithVariants = await Promise.all(
-          baseProducts.map(async (product: CatalogueProduct) => {
+          products.map(async (product: CatalogueProduct) => {
             try {
               const detailRes = await fetch(`/api/products/${product.product_id}`);
               if (detailRes.ok) {
