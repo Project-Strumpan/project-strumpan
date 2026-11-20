@@ -14,7 +14,6 @@ type ProductPageProps = {
 };
 
 export default function ProductPage({ params }: ProductPageProps) {
-  const cart = useContext(CartContext);
   const resolvedParams = use(params);
   const productId = Number(resolvedParams.id);
 
@@ -147,6 +146,7 @@ export default function ProductPage({ params }: ProductPageProps) {
                 description: product.description ?? "",
                 price: product.price,
                 picture_url: product.image_url,
+                availableStock: totalStock,
               }}
               available={totalStock > 0}
             />
