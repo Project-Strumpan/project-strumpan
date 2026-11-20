@@ -203,6 +203,21 @@ describe("/api/inventory/variants/[variantId]", () => {
 			expect(res.status).toBe(403);
 			expect(getConnection).not.toHaveBeenCalled();
 		});
+
+		it("rolls back and returns 500 when no local admin record exists", async () => {
+			authorizeInventoryAccess.mockResolvedValue({ ok: true, adminId: undefined });
+			const c = mockConnection(patchImpl);
+
+			const res = await patch("10", { sku: "NEW" });
+
+			expect(res.status).toBe(500);
+			expect(c.rollback).toHaveBeenCalledOnce();
+			expect(c.commit).not.toHaveBeenCalled();
+			expect(c.query).not.toHaveBeenCalledWith(
+				expect.stringContaining("INSERT INTO Audit_log"),
+				expect.anything()
+			);
+		});
 	});
 
 	describe("DELETE", () => {
@@ -288,6 +303,21 @@ describe("/api/inventory/variants/[variantId]", () => {
 			const res = await DELETE(new Request("http://localhost/x"), ctx("10"));
 			expect(res.status).toBe(403);
 			expect(getConnection).not.toHaveBeenCalled();
+		});
+
+		it("rolls back and returns 500 when no local admin record exists", async () => {
+			authorizeInventoryAccess.mockResolvedValue({ ok: true, adminId: undefined });
+			const c = mockConnection(deleteImpl(0));
+
+			const res = await DELETE(new Request("http://localhost/x"), ctx("10"));
+
+			expect(res.status).toBe(500);
+			expect(c.rollback).toHaveBeenCalledOnce();
+			expect(c.commit).not.toHaveBeenCalled();
+			expect(c.query).not.toHaveBeenCalledWith(
+				expect.stringContaining("INSERT INTO Audit_log"),
+				expect.anything()
+			);
 		});
 	});
 });
