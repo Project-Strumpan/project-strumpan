@@ -94,6 +94,7 @@ export async function POST(request: Request) {
 
         await writeAudit(connection, access.adminId, "create_product", "Products", productId, {
             productName: productName.trim(),
+            categoryId,
             variants: parsed,
         });
 

@@ -26,22 +26,29 @@ function mockConnection(queryImpl?: (sql: string) => unknown) {
 
 const ctx = (variantId: string) => ({ params: Promise.resolve({ variantId }) });
 
-function patch(variantId: string, body: unknown) {
-	return PATCH(
-		new Request("http://localhost/x", { method: "PATCH", body: JSON.stringify(body) }),
-		ctx(variantId)
-	);
+function patchRaw(variantId: string, raw: string) {
+	return PATCH(new Request("http://localhost/x", { method: "PATCH", body: raw }), ctx(variantId));
 }
+
+function patch(variantId: string, body: unknown) {
+	return patchRaw(variantId, JSON.stringify(body));
+}
+
+const beforeRow = { sku: "OLD-SKU", color: "Black", product_variant_size: "M" };
 
 describe("/api/inventory/variants/[variantId]", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		vi.spyOn(console, "error").mockImplementation(() => { });
 		authorizeInventoryAccess.mockResolvedValue({ ok: true, adminId: 1 });
 	});
 
 	describe("PATCH", () => {
-		it("updates sku, colour and size", async () => {
-			const c = mockConnection();
+		const patchImpl = (sql: string) =>
+			sql.includes("SELECT sku, color") ? [beforeRow] : { affectedRows: 1 };
+
+		it("updates sku, colour and size and logs before and after values", async () => {
+			const c = mockConnection(patchImpl);
 
 			const res = await patch("10", { sku: " NEW-SKU ", color: "Grey", size: "L" });
 
@@ -52,13 +59,39 @@ describe("/api/inventory/variants/[variantId]", () => {
 			);
 			expect(c.query).toHaveBeenCalledWith(
 				expect.stringContaining("INSERT INTO Audit_log"),
-				expect.arrayContaining([1, "update_variant", "Product_variants", 10])
+				[
+					1,
+					"update_variant",
+					"Product_variants",
+					10,
+					JSON.stringify({
+						before: { sku: "OLD-SKU", color: "Black", size: "M" },
+						after: { sku: "NEW-SKU", color: "Grey", size: "L" },
+					}),
+				]
 			);
 			expect(c.commit).toHaveBeenCalledOnce();
 		});
 
-		it("allows clearing the colour", async () => {
-			const c = mockConnection();
+		it("logs only the fields that were sent", async () => {
+			const c = mockConnection(patchImpl);
+
+			await patch("10", { sku: "ONLY-SKU" });
+
+			expect(c.query).toHaveBeenCalledWith(
+				expect.stringContaining("INSERT INTO Audit_log"),
+				[
+					1,
+					"update_variant",
+					"Product_variants",
+					10,
+					JSON.stringify({ before: { sku: "OLD-SKU" }, after: { sku: "ONLY-SKU" } }),
+				]
+			);
+		});
+
+		it("allows clearing the colour and logs null as the new value", async () => {
+			const c = mockConnection(patchImpl);
 
 			const res = await patch("10", { color: "" });
 
@@ -66,6 +99,16 @@ describe("/api/inventory/variants/[variantId]", () => {
 			expect(c.query).toHaveBeenCalledWith(
 				expect.stringContaining("color = ?"),
 				[null, 10]
+			);
+			expect(c.query).toHaveBeenCalledWith(
+				expect.stringContaining("INSERT INTO Audit_log"),
+				[
+					1,
+					"update_variant",
+					"Product_variants",
+					10,
+					JSON.stringify({ before: { color: "Black" }, after: { color: null } }),
+				]
 			);
 		});
 
@@ -80,6 +123,16 @@ describe("/api/inventory/variants/[variantId]", () => {
 			expect(getConnection).not.toHaveBeenCalled();
 		});
 
+		it.each(["constructor", "toString", "__proto__"])(
+			"rejects the inherited key %s as a forbidden field",
+			async (key) => {
+				const res = await patchRaw("10", `{"${key}":"x"}`);
+				expect(res.status).toBe(400);
+				expect(await res.json()).toEqual({ error: "Field not allowed" });
+				expect(getConnection).not.toHaveBeenCalled();
+			}
+		);
+
 		it("rejects an empty sku and names the field", async () => {
 			const res = await patch("10", { sku: " " });
 			expect(res.status).toBe(400);
@@ -87,10 +140,7 @@ describe("/api/inventory/variants/[variantId]", () => {
 		});
 
 		it("rejects invalid JSON", async () => {
-			const res = await PATCH(
-				new Request("http://localhost/x", { method: "PATCH", body: "not json" }),
-				ctx("10")
-			);
+			const res = await patchRaw("10", "not json");
 			expect(res.status).toBe(400);
 			expect(getConnection).not.toHaveBeenCalled();
 		});
@@ -102,20 +152,38 @@ describe("/api/inventory/variants/[variantId]", () => {
 		});
 
 		it("returns 404 for an unknown variant", async () => {
-			const c = mockConnection(() => ({ affectedRows: 0 }));
+			const c = mockConnection(() => []);
 			const res = await patch("999", { sku: "A" });
 			expect(res.status).toBe(404);
 			expect(c.rollback).toHaveBeenCalledOnce();
+			expect(c.commit).not.toHaveBeenCalled();
 		});
 
 		it("returns 409 on duplicate SKU and names the field", async () => {
-			const c = mockConnection(() => {
-				throw Object.assign(new Error("dup"), { code: "ER_DUP_ENTRY" });
+			const c = mockConnection((sql) => {
+				if (sql.includes("UPDATE Product_variants")) {
+					throw Object.assign(new Error("dup"), { code: "ER_DUP_ENTRY" });
+				}
+				return patchImpl(sql);
 			});
 			const res = await patch("10", { sku: "TAKEN" });
 			expect(res.status).toBe(409);
 			expect((await res.json()).field).toBe("sku");
 			expect(c.rollback).toHaveBeenCalledOnce();
+		});
+
+		it("rolls back and returns 500 when the audit insert fails", async () => {
+			const c = mockConnection((sql) => {
+				if (sql.includes("INSERT INTO Audit_log")) throw new Error("audit failed");
+				return patchImpl(sql);
+			});
+
+			const res = await patch("10", { sku: "NEW" });
+
+			expect(res.status).toBe(500);
+			expect(c.rollback).toHaveBeenCalledOnce();
+			expect(c.commit).not.toHaveBeenCalled();
+			expect(c.release).toHaveBeenCalledOnce();
 		});
 
 		it("returns 401 when signed out", async () => {
@@ -138,10 +206,16 @@ describe("/api/inventory/variants/[variantId]", () => {
 	});
 
 	describe("DELETE", () => {
-		it("deletes a variant without orders and writes an audit log", async () => {
-			const c = mockConnection((sql) =>
-				sql.includes("COUNT(*)") ? [{ n: BigInt(0) }] : { affectedRows: 1 }
-			);
+		const snapshotRow = { product_id: 1, sku: "S-BLK-M", color: "Black", size: "M", quantity: "12" };
+
+		const deleteImpl = (orders: number, rows: unknown[] = [snapshotRow]) => (sql: string) => {
+			if (sql.includes("COUNT(*)")) return [{ n: BigInt(orders) }];
+			if (sql.includes("FROM Product_variants pv")) return rows;
+			return { affectedRows: 1 };
+		};
+
+		it("deletes a variant without orders and logs a snapshot of what was removed", async () => {
+			const c = mockConnection(deleteImpl(0));
 
 			const res = await DELETE(new Request("http://localhost/x"), ctx("10"));
 
@@ -152,15 +226,21 @@ describe("/api/inventory/variants/[variantId]", () => {
 			);
 			expect(c.query).toHaveBeenCalledWith(
 				expect.stringContaining("INSERT INTO Audit_log"),
-				expect.arrayContaining([1, "delete_variant", "Product_variants", 10])
+				[
+					1,
+					"delete_variant",
+					"Product_variants",
+					10,
+					JSON.stringify({
+						before: { productId: 1, sku: "S-BLK-M", color: "Black", size: "M", quantity: 12 },
+					}),
+				]
 			);
 			expect(c.commit).toHaveBeenCalledOnce();
 		});
 
 		it("returns 409 and deletes nothing when the variant has orders", async () => {
-			const c = mockConnection((sql) =>
-				sql.includes("COUNT(*)") ? [{ n: BigInt(3) }] : { affectedRows: 1 }
-			);
+			const c = mockConnection(deleteImpl(3));
 
 			const res = await DELETE(new Request("http://localhost/x"), ctx("10"));
 
@@ -169,15 +249,32 @@ describe("/api/inventory/variants/[variantId]", () => {
 				expect.stringContaining("DELETE FROM Product_variants"),
 				expect.anything()
 			);
+			expect(c.query).not.toHaveBeenCalledWith(
+				expect.stringContaining("INSERT INTO Audit_log"),
+				expect.anything()
+			);
 			expect(c.rollback).toHaveBeenCalledOnce();
 		});
 
+		it("rolls back and keeps the variant when the audit insert fails", async () => {
+			const c = mockConnection((sql) => {
+				if (sql.includes("INSERT INTO Audit_log")) throw new Error("audit failed");
+				return deleteImpl(0)(sql);
+			});
+
+			const res = await DELETE(new Request("http://localhost/x"), ctx("10"));
+
+			expect(res.status).toBe(500);
+			expect(c.rollback).toHaveBeenCalledOnce();
+			expect(c.commit).not.toHaveBeenCalled();
+			expect(c.release).toHaveBeenCalledOnce();
+		});
+
 		it("returns 404 for an unknown variant", async () => {
-			mockConnection((sql) =>
-				sql.includes("COUNT(*)") ? [{ n: BigInt(0) }] : { affectedRows: 0 }
-			);
+			const c = mockConnection(deleteImpl(0, []));
 			const res = await DELETE(new Request("http://localhost/x"), ctx("999"));
 			expect(res.status).toBe(404);
+			expect(c.rollback).toHaveBeenCalledOnce();
 		});
 
 		it("returns 400 for an invalid id", async () => {
