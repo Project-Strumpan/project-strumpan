@@ -15,6 +15,7 @@ const product: CartItem = {
     description: "Test description",
     price: 100,
     quantity: 0,
+    availableStock: 10,
     picture_url:
       "https://images.unsplash.com/photo-1503602642458-232111445657?auto=format&fit=crop&w=300&q=80",
 };

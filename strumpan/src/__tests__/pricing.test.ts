@@ -36,7 +36,7 @@ describe("Pricing & VAT Engine (Acceptanskriterier för moms & ordersammanfattni
 
   it("ska beräkna korrekt svensk moms (25%) på varor och frakt", () => {
     const items = [
-      { id: "1", title: "Klassisk Strumpa", price: 100, quantity: 2 }, // 200 kr
+      { id: "1", title: "Klassisk Strumpa", description: "Testprodukt", price: 100, quantity: 2 }, // 200 kr
     ];
 
     // Under 399 kr -> tillkommer 39 kr standardfrakt
@@ -65,7 +65,7 @@ describe("Pricing & VAT Engine (Acceptanskriterier för moms & ordersammanfattni
 
   it("ska tillämpa fri frakt när ordervärdet är 399 kr eller högre", () => {
     const items = [
-      { id: "1", title: "Premium Ullstrumpa", price: 200, quantity: 2 }, // 400 kr
+      { id: "1", title: "Premium Ullstrumpa", description: "Testprodukt", price: 200, quantity: 2 }, // 400 kr
     ];
 
     const pricing = calculateOrderPricing(items, "SE");
@@ -82,7 +82,7 @@ describe("Pricing & VAT Engine (Acceptanskriterier för moms & ordersammanfattni
 
   it("ska dynamiskt räkna om moms för EU-land (t.ex. Tyskland 19%)", () => {
     const items = [
-      { id: "1", title: "Strumpa", price: 119, quantity: 1 }, // 119 kr inkl moms
+      { id: "1", title: "Strumpa", description: "Testprodukt", price: 119, quantity: 1 }, // 119 kr inkl moms
     ];
 
     // Med tysk moms (19%):
