@@ -1,0 +1,17 @@
+name: Deploy main
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, strumpan-vps]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build and deploy
+        run: |
+          docker compose build --pull
+          docker compose up -d --remove-orphans
+          docker image prune -f
