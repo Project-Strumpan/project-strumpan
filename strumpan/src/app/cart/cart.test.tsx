@@ -1,373 +1,292 @@
-import { describe, it, expect, vi, afterEach } from "vitest";
-import { render, screen, cleanup } from "@testing-library/react";
+
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { render, screen, cleanup, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { useContext, useState } from "react";
 import "@testing-library/jest-dom/vitest";
 
 import CartPage from "./page";
-import { CartProvider, CartContext } from "@/app/CartContext";
+import { CartProvider, useCart } from "@/app/CartContext";
+import type { CartItem } from "@/app/CartContext";
+import { useState } from "react";
 
-// Mock product data
-const { mockProducts } = vi.hoisted(() => ({
-    mockProducts: [
-        {
-            id: 1,
-            product_name: "Test product 1",
-            product_description: "Description 1",
-            picture_url: "/test1.jpg",
-            price: 100,
-            stock: 10,
-        },
-        {
-            id: 2,
-            product_name: "Test product 2",
-            product_description: "Description 2",
-            picture_url: "/test2.jpg",
-            price: 200,
-            stock: 10,
-        },
-    ],
-}));
+const product1: Omit<CartItem, "quantity"> = {
+  id: "1",
+  title: "Test product 1",
+  description: "Description 1",
+  picture_url: "/test1.jpg",
+  price: 100,
+  availableStock: 5,
+};
 
-vi.mock("@/productsStore", () => ({
-    productsArray: mockProducts,
-    getProductData: (id: number) =>
-        mockProducts.find(product => product.id === id),
-}));
+const product2: Omit<CartItem, "quantity"> = {
+  id: "2",
+  title: "Test product 2",
+  description: "Description 2",
+  picture_url: "/test2.jpg",
+  price: 200,
+  availableStock: 10,
+};
 
-// Component for adding products to the cart
 function CartControls() {
-    const cart = useContext(CartContext);
+  const cart = useCart();
 
-    if (!cart) return null;
+  return (
+    <div>
+      <button onClick={() => cart.addItem(product1)}>
+        Add product 1
+      </button>
 
-    return (
-        <div>
-            <button onClick={() => cart.addOneToCart("1")}>
-                Add product 1
-            </button>
-
-            <button onClick={() => cart.addOneToCart("2")}>
-                Add product 2
-            </button>
-        </div>
-    );
+      <button onClick={() => cart.addItem(product2)}>
+        Add product 2
+      </button>
+    </div>
+  );
 }
 
-// Render the actual CartProvider and CartPage
 function renderCartPage() {
-    return render(
-        <CartProvider>
-            <CartControls />
-            <CartPage />
-        </CartProvider>
-    );
+  return render(
+    <CartProvider>
+      <CartControls />
+      <CartPage />
+    </CartProvider>
+  );
 }
-
 
 function NavigationTest() {
-    const [page, setPage] = useState("product");
+  const [page, setPage] = useState("product");
+  const cart = useCart();
 
-    const cart = useContext(CartContext);
+  return (
+    <div>
+      <button onClick={() => setPage("cart")}>
+        Open cart
+      </button>
 
-    if (!cart) return null;
+      <button onClick={() => setPage("another")}>
+        Go to another page
+      </button>
 
-    return (
-        <div>
-            <button onClick={() => setPage("cart")}>
-                Open cart
-            </button>
+      <button onClick={() => setPage("product")}>
+        Go back to product page
+      </button>
 
-            <button onClick={() => setPage("another")}>
-                Go to another page
-            </button>
+      {page === "product" && (
+        <>
+          <button onClick={() => cart.addItem(product1)}>
+            Add product
+          </button>
+          <h1>Product page</h1>
+        </>
+      )}
 
-            <button onClick={() => setPage("product")}>
-                Go back to product page
-            </button>
+      {page === "cart" && <CartPage />}
 
-            {page === "product" && (
-                <button onClick={() => cart.addOneToCart("1")}>
-                    Add product
-                </button>
-            )}
-
-            {page === "cart" && <CartPage />}
-
-            {page === "another" && <h1>Another page</h1>}
-
-            {page === "product" && <h1>Product page</h1>}
-        </div>
-    );
+      {page === "another" && <h1>Another page</h1>}
+    </div>
+  );
 }
 
+beforeEach(() => {
+  localStorage.clear();
+});
+
 afterEach(() => {
-    cleanup();
+  cleanup();
+  localStorage.clear();
 });
 
 describe("CartPage", () => {
-    it("renders the cart page", () => {
-        const { container } = render(
-            <CartProvider>
-                <CartPage />
-            </CartProvider>
-        );
+  it("renders the cart page", () => {
+    renderCartPage();
 
-        screen.debug();
-        expect(container).toHaveTextContent("Your cart");
-    });
+    expect(
+      screen.getByRole("heading", { name: "Your cart" })
+    ).toBeInTheDocument();
+  });
 
-    it("The cart page item list is empty if there's nothing in the cart.", () => {
-        renderCartPage();
+  it("shows an empty cart when no products have been added", () => {
+    renderCartPage();
 
-        expect(
-            screen.getByRole("heading", { name: "Your cart" })
-        ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Your cart" })
+    ).toBeInTheDocument();
 
-        screen.debug();
-        expect(screen.getByText("0 items")).toBeInTheDocument();
-    });
+    expect(screen.getByText("0 items")).toBeInTheDocument();
+  });
 
-    it("There shouldn’t be a shipping price over 0 with no items in the cart.", () => {
-        renderCartPage();
+  it("shows free shipping when the cart is empty", () => {
+    renderCartPage();
 
-        expect(
-            screen.getByRole("heading", { name: "Your cart" })
-        ).toBeInTheDocument();
+    expect(screen.getByText("Free")).toBeInTheDocument();
+  });
 
-        expect(screen.getByText("Free")).toBeInTheDocument();
+  it("displays products added to the shared cart", async () => {
+    const user = userEvent.setup();
 
-    });
+    renderCartPage();
 
+    await user.click(screen.getByRole("button", { name: "Add product 1" }));
+    await user.click(screen.getByRole("button", { name: "Add product 2" }));
 
-    it("Shows the items from the customers site-wide shopping cart", async () => {
-        const user = userEvent.setup();
+    expect(screen.getByText("Test product 1")).toBeInTheDocument();
+    expect(screen.getByText("Test product 2")).toBeInTheDocument();
 
-        renderCartPage();
+    expect(screen.getByText("2 items")).toBeInTheDocument();
+  });
 
-        await user.click(
-            screen.getByRole("button", { name: "Add product 1" })
-        );
+  it("displays the correct product price", async () => {
+    const user = userEvent.setup();
 
-        await user.click(
-            screen.getByRole("button", { name: "Add product 2" })
-        );
+    renderCartPage();
 
-        expect(
-            screen.getByText("Test product 1")
-        ).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Add product 1" }));
 
-        expect(
-            screen.getByText("Test product 2")
-        ).toBeInTheDocument();
+    expect(
+      screen.getByLabelText(/price of Test product 1/i)
+    ).toHaveTextContent("100.00 kr");
+  });
 
-        expect(screen.getByText("2 items")).toBeInTheDocument();
-    });
+  it("calculates the product subtotal based on quantity", async () => {
+    const user = userEvent.setup();
 
-    it("The price of the product shown on the page is the same as in the storage", async () => {
-        const user = userEvent.setup();
+    renderCartPage();
 
-        renderCartPage();
+    await user.click(screen.getByRole("button", { name: "Add product 1" }));
 
-        await user.click(
-            screen.getByRole("button", { name: "Add product 1" })
-        );
+    await user.click(
+      screen.getByRole("button", { name: "Increase quantity" })
+    );
 
-        expect(screen.getByLabelText(/price of Test product 1/i).innerHTML === "100.00 kr");
-    });
+    // 100 kr * 2 = 200 kr
+    expect(screen.getAllByText("200.00 kr").length).toBe(2);
+    expect(screen.getByText("2", { selector: "span" })).toBeInTheDocument();
+  });
 
-    it("Total cost per product is based on the quantity of the product", async () => {
-        const user = userEvent.setup();
+  it("increases the quantity of a product", async () => {
+    const user = userEvent.setup();
 
-        renderCartPage();
+    renderCartPage();
 
-        await user.click(
-            screen.getByRole("button", { name: "Add product 1" })
-        );
+    await user.click(screen.getByRole("button", { name: "Add product 1" }));
 
-        await user.click(
-            screen.getByRole("button", { name: "Increase quantity" })
-        );
+    await user.click(
+      screen.getByRole("button", { name: "Increase quantity" })
+    );
 
-        // 100 kr * 2 = 200 kr
-        expect(screen.getAllByText("200.00 kr").length).toBe(2);
+    expect(screen.getByText("2", { selector: "span" })).toBeInTheDocument();
+  });
 
-        expect(screen.getByText("2", { selector: "span" }))
-            .toBeInTheDocument();
-    });
+  it("decreases the quantity of a product", async () => {
+    const user = userEvent.setup();
 
-    it("Supports increasing the quantity of a product", async () => {
-        const user = userEvent.setup();
+    renderCartPage();
 
-        renderCartPage();
+    await user.click(screen.getByRole("button", { name: "Add product 1" }));
 
-        await user.click(
-            screen.getByRole("button", { name: "Add product 1" })
-        );
+    await user.click(
+      screen.getByRole("button", { name: "Increase quantity" })
+    );
 
-        await user.click(
-            screen.getByRole("button", { name: "Increase quantity" })
-        );
+    await user.click(
+      screen.getByRole("button", { name: "Decrease quantity" })
+    );
 
-        expect(screen.getByText("2", { selector: "span" }))
-            .toBeInTheDocument();
-    });
+    expect(screen.getByText("1", { selector: "span" })).toBeInTheDocument();
+  });
 
-    it("Supports decreasing the quantity of a product   ", async () => {
-        const user = userEvent.setup();
+  it("removes a product when its quantity is decreased to zero", async () => {
+    const user = userEvent.setup();
 
-        renderCartPage();
+    renderCartPage();
 
-        await user.click(
-            screen.getByRole("button", { name: "Add product 1" })
-        );
+    await user.click(screen.getByRole("button", { name: "Add product 1" }));
 
-        await user.click(
-            screen.getByRole("button", { name: "Increase quantity" })
-        );
+    await user.click(
+      screen.getByRole("button", { name: "Decrease quantity" })
+    );
 
-        await user.click(
-            screen.getByRole("button", { name: "Decrease quantity" })
-        );
+    expect(screen.queryByText("Test product 1")).not.toBeInTheDocument();
+    expect(screen.getByText("0 items")).toBeInTheDocument();
+  });
 
-        expect(screen.getByText("1", { selector: "span" }))
-            .toBeInTheDocument();
-    });
+  it("removes a product when the remove button is pressed", async () => {
+    const user = userEvent.setup();
 
-    it("Removes item if quantity is decreased to 0 or remove button is pressed_decrease", async () => {
-        const user = userEvent.setup();
+    renderCartPage();
 
-        renderCartPage();
+    await user.click(screen.getByRole("button", { name: "Add product 1" }));
 
-        await user.click(
-            screen.getByRole("button", { name: "Add product 1" })
-        );
+    await user.click(screen.getByRole("button", { name: "Remove" }));
 
-        await user.click(
-            screen.getByRole("button", { name: "Decrease quantity" })
-        );
+    expect(screen.queryByText("Test product 1")).not.toBeInTheDocument();
+    expect(screen.getByText("0 items")).toBeInTheDocument();
+  });
 
-        expect(
-            screen.queryByText("Test product 1")
-        ).not.toBeInTheDocument();
+  it("calculates the total cart subtotal correctly", async () => {
+    const user = userEvent.setup();
 
-        expect(screen.getByText("0 items")).toBeInTheDocument();
-    });
+    renderCartPage();
 
-    it("Removes item if quantity is decreased to 0 or remove button is pressed_remove", async () => {
-        const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: "Add product 1" }));
+    await user.click(screen.getByRole("button", { name: "Add product 2" }));
 
-        renderCartPage();
+    // 100 + 200 = 300
+    expect(screen.getAllByText("300.00 kr").length).toBe(2);
+  });
 
-        await user.click(
-            screen.getByRole("button", { name: "Add product 1" })
-        );
+  it("calculates shipping costs below the free shipping threshold", async () => {
+    const user = userEvent.setup();
 
-        await user.click(
-            screen.getByRole("button", { name: "Remove" })
-        );
+    renderCartPage();
 
-        expect(
-            screen.queryByText("Test product 1")
-        ).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Add product 1" }));
 
-        expect(screen.getByText("0 items")).toBeInTheDocument();
-    });
+    expect(screen.getByText("15.00 kr")).toBeInTheDocument();
+    expect(screen.getByText("115.00 kr")).toBeInTheDocument();
+  });
 
-    it("The cart page lists items, quantities, subtotals and total_subtotal", async () => {
-        const user = userEvent.setup();
+  it("offers free shipping above the free shipping threshold", async () => {
+    const user = userEvent.setup();
 
-        renderCartPage();
+    renderCartPage();
 
-        await user.click(
-            screen.getByRole("button", { name: "Add product 1" })
-        );
+    await user.click(screen.getByRole("button", { name: "Add product 1" }));
+    await user.click(screen.getByRole("button", { name: "Add product 1" }));
+    await user.click(screen.getByRole("button", { name: "Add product 1" }));
 
-        await user.click(
-            screen.getByRole("button", { name: "Add product 2" })
-        );
+    expect(screen.getByText("Free")).toBeInTheDocument();
+    expect(screen.getAllByText("300.00 kr").length).toBe(3);
+  });
 
-        // 100 + 200 = 300
-        expect(screen.getAllByText("300.00 kr").length).toBe(2);
-    });
+  it("keeps cart contents when navigating between pages", async () => {
+    const user = userEvent.setup();
 
-    it("Shipping price is based on the total price of the cart items_UnderThreshold", async () => {
-        const user = userEvent.setup();
+    render(
+      <CartProvider>
+        <NavigationTest />
+      </CartProvider>
+    );
 
-        renderCartPage();
+    // Add product
+    await user.click(screen.getByRole("button", { name: "Add product" }));
 
-        await user.click(
-            screen.getByRole("button", { name: "Add product 1" })
-        );
+    // Open cart
+    await user.click(screen.getByRole("button", { name: "Open cart" }));
 
-        expect(screen.getByText("15.00 kr")).toBeInTheDocument();
+    expect(screen.getByText("Test product 1")).toBeInTheDocument();
 
-        // 100 + 15 = 115
-        expect(screen.getByText("115.00 kr")).toBeInTheDocument();
-    });
+    // Navigate away
+    await user.click(
+      screen.getByRole("button", { name: "Go to another page" })
+    );
 
-    it("Shipping price is based on the total price of the cart items_OverThreshold", async () => {
-        const user = userEvent.setup();
+    // Navigate back
+    await user.click(screen.getByRole("button", { name: "Open cart" }));
 
-        renderCartPage();
+    expect(screen.getByText("Test product 1")).toBeInTheDocument();
 
-        await user.click(
-            screen.getByRole("button", { name: "Add product 1" })
-        );
-
-        await user.click(
-            screen.getByRole("button", { name: "Add product 1" })
-        );
-
-        await user.click(
-            screen.getByRole("button", { name: "Add product 1" })
-        );
-
-        // 3 * 100 = 300
-        expect(screen.getByText("Free")).toBeInTheDocument();
-
-        expect(screen.getAllByText("300.00 kr").length).toBe(3);
-    });
-    it("Changes persist between opening a different page and going back", async () => {
-        const user = userEvent.setup();
-
-        render(
-            <CartProvider>
-                <NavigationTest />
-            </CartProvider>
-        );
-
-        // Add product
-        await user.click(
-            screen.getByRole("button", { name: "Add product" })
-        );
-
-        // Open cart
-        await user.click(
-            screen.getByRole("button", { name: "Open cart" })
-        );
-
-        expect(
-            screen.getByText("Test product 1")
-        ).toBeInTheDocument();
-
-        // Navigate away
-        await user.click(
-            screen.getByRole("button", { name: "Go to another page" })
-        );
-
-        // Navigate back to cart
-        await user.click(
-            screen.getByRole("button", { name: "Open cart" })
-        );
-
-        // Product should still exist
-        expect(
-            screen.getByText("Test product 1")
-        ).toBeInTheDocument();
-
-        expect(
-            screen.getByLabelText(/price of Test product 1/i)
-        ).toBeInTheDocument();
-    });
+    expect(
+      screen.getByLabelText(/price of Test product 1/i)
+    ).toBeInTheDocument();
+  });
 });
