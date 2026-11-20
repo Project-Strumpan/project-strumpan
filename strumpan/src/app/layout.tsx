@@ -4,7 +4,7 @@ import Link from "next/link";
 import "./globals.css";
 import Providers from "./providers";
 import Navbar from "@/components/Navbar";
-import Footer from "./footer/page"
+import Footer from "@/components/Footer"
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -35,14 +35,7 @@ export default function RootLayout({
         <Navbar/>
         <Providers>
           <div className="flex-1">{children}</div>
-          <footer className="flex justify-center gap-4 border-t border-gray-200 bg-white px-4 py-6 text-sm text-gray-600">
-            <Link href="/about" className="hover:underline">
-              Om oss
-            </Link>
-            <Link href="/cookies" className="hover:underline">
-              Cookies
-            </Link>
-          </footer>
+          <Footer/>
         </Providers>
       </body>
     </html>
