@@ -121,9 +121,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     );
   }
 
-  function clearCart() {
+  const clearCart = React.useCallback(() => {
     setItems([]);
-  }
+  }, []);
 
   function loadDemoItems() {
     setItems(DEFAULT_DEMO_ITEMS);

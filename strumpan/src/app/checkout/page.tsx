@@ -31,6 +31,12 @@ export default function CheckoutPage() {
     phone: "",
   });
 
+  useEffect(() => {
+    try {
+      sessionStorage.setItem("strumpan_checkout_customer", JSON.stringify(customerInfo));
+    } catch {}
+  }, [customerInfo]);
+
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [stripeError, setStripeError] = useState<string | null>(null);
   const [isLoadingPaymentIntent, setIsLoadingPaymentIntent] = useState(false);
