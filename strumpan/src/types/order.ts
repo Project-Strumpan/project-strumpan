@@ -50,3 +50,58 @@ export type CreateOrderResponse = {
         unit_price: number;
     }[];
 };
+
+export type PaymentMethod = "klarna" | "stripe" | "swish";
+export type PaymentStatus = "pending" | "authorized" | "paid" | "failed" | "refunded";
+
+export interface PaidOrderCustomerInput {
+    name: string;
+    email: string;
+    phone?: string;
+}
+
+export interface PaidOrderAddressInput {
+    street: string;
+    postalCode: string;
+    city: string;
+    country: string;
+}
+
+export interface PaidOrderItemInput {
+    variantId: number;
+    quantity: number;
+    unitPrice: number;
+}
+
+export interface CreatePaidOrderInput {
+    transactionId: string;
+    paymentMethod: PaymentMethod;
+    paymentStatus: string;
+    customer: PaidOrderCustomerInput;
+    address: PaidOrderAddressInput;
+    items: PaidOrderItemInput[];
+    totalCost: number;
+}
+
+export interface CreatePaidOrderResult {
+    order_id: number;
+    customer_id: number;
+    order_status: "paid";
+    total_cost: number;
+    order_date: string;
+    payment: {
+        payment_id: number;
+        payment_method: PaymentMethod;
+        payment_status: "paid";
+        transaction_id: string;
+        total_amount: number;
+        payment_date: string;
+    };
+    items: {
+        order_item_id: number;
+        variant_id: number;
+        quantity: number;
+        unit_price: number;
+    }[];
+    alreadyExists?: boolean;
+}

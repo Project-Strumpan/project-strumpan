@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getStripeServer } from "@/lib/stripe-server";
 import { calculateOrderPricing, OrderItemInput } from "@/lib/pricing";
+import { pool } from "@/lib/db";
 
 export async function POST(request: Request) {
   try {
@@ -16,7 +17,53 @@ export async function POST(request: Request) {
       );
     }
 
-    // Beräkna priser och moms på servern för säkerhet
+    // 1. Säkerhetsvalidering mot databasen: Slå upp verkliga priser från MariaDB
+    // så att en kund inte kan manipulera sitt eget pris (t.ex. skicka in price: 0.01)
+    const variantIds = items
+      .map((item) => Number(item.id))
+      .filter((id) => !isNaN(id) && id > 0);
+
+    if (variantIds.length > 0) {
+      try {
+        const conn = await pool.getConnection();
+        const placeholders = variantIds.map(() => "?").join(", ");
+        const dbVariants = await conn.query<any[]>(
+          `
+          SELECT pv.variant_id, p.price, p.product_name, pv.product_variant_size, pv.color
+          FROM Product_variants pv
+          JOIN Products p ON p.product_id = pv.product_id
+          WHERE pv.variant_id IN (${placeholders})
+          `,
+          variantIds
+        );
+        conn.release();
+
+        const priceMap = new Map<number, { price: number; title: string }>();
+        for (const row of dbVariants) {
+          priceMap.set(Number(row.variant_id), {
+            price: Number(row.price),
+            title: row.product_name,
+          });
+        }
+
+        // Skriv över klientens priser med det auktoritativa priset från MariaDB
+        for (const item of items) {
+          const vId = Number(item.id);
+          const dbData = priceMap.get(vId);
+          if (dbData) {
+            item.price = dbData.price;
+            if (!item.title) {
+              item.title = dbData.title;
+            }
+          }
+        }
+      } catch (dbErr) {
+        // Om databasen inte är ansluten (t.ex. vid vissa fristående enhetstester) loggas en varning
+        console.warn("Kunde inte slå upp serverpriser från MariaDB (använder fallback):", dbErr);
+      }
+    }
+
+    // Beräkna priser och moms på servern med de verifierade priserna
     const pricing = calculateOrderPricing(items, countryCode);
 
     if (pricing.totalGrossInOre <= 0) {

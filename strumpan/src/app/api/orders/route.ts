@@ -140,7 +140,7 @@ export async function POST( _request: NextRequest ) {
             [user.customer_id, body.delivery_address_id, body.invoice_address_id, total_cost]
         );
 
-        const order_id = Number(orderResult.insert_id);
+        const order_id = Number((orderResult as any).insertId ?? orderResult.insert_id);
         const created_items: CreateOrderResponse["items"] = [];
 
         for (const item of body.items) {
@@ -163,8 +163,19 @@ export async function POST( _request: NextRequest ) {
                 [order_id, item.variant_id, item.quantity, Number(variant.price)]
             );
 
+            // Minska lagersaldot i Inventory så vi inte säljer slut (oversell)
+            await connection.query(
+                `
+                UPDATE Inventory
+                SET quantity = GREATEST(0, quantity - ?),
+                    last_updated = CURRENT_TIMESTAMP
+                WHERE variant_id = ?
+                `,
+                [item.quantity, item.variant_id]
+            );
+
             created_items.push({
-                order_item_id: Number(itemResult.insert_id),
+                order_item_id: Number((itemResult as any).insertId ?? itemResult.insert_id),
                 variant_id: item.variant_id,
                 quantity: item.quantity,
                 unit_price: Number(variant.price),
