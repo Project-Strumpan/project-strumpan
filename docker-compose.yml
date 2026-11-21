@@ -1,6 +1,6 @@
 services:
   web:
-    build: .
+    build: ./strumpan
     restart: unless-stopped
     env_file:
       - /opt/strumpan/.env
