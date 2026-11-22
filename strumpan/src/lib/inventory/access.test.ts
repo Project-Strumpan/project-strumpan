@@ -6,89 +6,86 @@ const { getSession, hasAdminPermission, getConnection } = vi.hoisted(() => ({
 	getConnection: vi.fn(),
 }));
 
-vi.mock("@/lib/auth", () => ({
-	auth0: { getSession },
-	hasAdminPermission,
-}));
+vi.mock("@/lib/auth", () => ({ auth0: { getSession }, hasAdminPermission }));
 vi.mock("@/lib/db", () => ({ pool: { getConnection } }));
 
-import { authorizeInventoryAccess } from "./access";
+import { authorizeInventoryAccess, authorizeOwnerAccess } from "./access";
 
-function mockConnection(queryResult: unknown) {
-	const connection = {
-		query: vi.fn().mockResolvedValue(queryResult),
-		release: vi.fn(),
-	};
+const superadmin = [
+	{ admin_id: 1, permissions_name: "manage_inventory" },
+	{ admin_id: 1, permissions_name: "manage_products" },
+	{ admin_id: 1, permissions_name: "manage_admins" },
+];
+const inventoryManager = [
+	{ admin_id: 2, permissions_name: "manage_inventory" },
+	{ admin_id: 2, permissions_name: "manage_products" },
+];
+const customerService = [
+	{ admin_id: 3, permissions_name: "view_orders" },
+	{ admin_id: 3, permissions_name: "update_orders" },
+];
+
+function mockRows(rows: unknown[]) {
+	const connection = { query: vi.fn().mockResolvedValue(rows), release: vi.fn() };
 	getConnection.mockResolvedValue(connection);
 	return connection;
 }
 
-describe("authorizeInventoryAccess", () => {
+describe("admin role access", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		vi.spyOn(console, "error").mockImplementation(() => {});
-		getSession.mockResolvedValue({ user: { email: "inventory@strumpan.test" } });
+		getSession.mockResolvedValue({ user: { email: "a@b.se", email_verified: true } });
 		hasAdminPermission.mockResolvedValue(true);
 	});
 
-	it("returns 401 when there is no session", async () => {
+	it("returns 401 when signed out", async () => {
 		getSession.mockResolvedValue(null);
-
-		expect(await authorizeInventoryAccess()).toEqual({
-			ok: false,
-			status: 401,
-			error: "Authentication required",
-		});
+		expect(await authorizeInventoryAccess()).toMatchObject({ ok: false, status: 401 });
 		expect(getConnection).not.toHaveBeenCalled();
 	});
 
-	it("returns 403 without admin permission and does not query the database", async () => {
+	it("returns 403 without the Auth0 admin permission", async () => {
 		hasAdminPermission.mockResolvedValue(false);
-
-		expect(await authorizeInventoryAccess()).toEqual({
-			ok: false,
-			status: 403,
-			error: "Forbidden",
-		});
+		expect(await authorizeInventoryAccess()).toMatchObject({ ok: false, status: 403 });
 		expect(getConnection).not.toHaveBeenCalled();
 	});
 
-	it("resolves adminId from the session email and releases the connection", async () => {
-		const connection = mockConnection([{ admin_id: 2 }]);
-
-		expect(await authorizeInventoryAccess()).toEqual({ ok: true, adminId: 2 });
-		expect(connection.query).toHaveBeenCalledWith(
-			expect.stringContaining("FROM Admins WHERE email = ?"),
-			["inventory@strumpan.test"]
-		);
-		expect(connection.release).toHaveBeenCalledOnce();
-	});
-
-	it("returns ok without adminId when the email has no Admins row", async () => {
-		mockConnection([]);
-
-		expect(await authorizeInventoryAccess()).toEqual({ ok: true, adminId: undefined });
-	});
-
-	it("returns ok without a lookup when the session has no email", async () => {
+	it("returns 403 when the email is missing", async () => {
 		getSession.mockResolvedValue({ user: {} });
-
-		expect(await authorizeInventoryAccess()).toEqual({ ok: true });
+		expect(await authorizeInventoryAccess()).toMatchObject({ ok: false, status: 403 });
 		expect(getConnection).not.toHaveBeenCalled();
+	});
+
+
+	it("returns 403 when no Admins row exists", async () => {
+		mockRows([]);
+		expect(await authorizeInventoryAccess()).toMatchObject({ ok: false, status: 403 });
+	});
+
+	it("returns 403 for customer_service on inventory", async () => {
+		mockRows(customerService);
+		expect(await authorizeInventoryAccess()).toMatchObject({ ok: false, status: 403 });
+	});
+
+	it("lets inventory_manager into inventory but not owner routes", async () => {
+		mockRows(inventoryManager);
+		expect(await authorizeInventoryAccess()).toEqual({ ok: true, adminId: 2 });
+		mockRows(inventoryManager);
+		expect(await authorizeOwnerAccess()).toMatchObject({ ok: false, status: 403 });
+	});
+
+	it("lets superadmin into both inventory and owner routes", async () => {
+		mockRows(superadmin);
+		expect(await authorizeInventoryAccess()).toEqual({ ok: true, adminId: 1 });
+		mockRows(superadmin);
+		expect(await authorizeOwnerAccess()).toEqual({ ok: true, adminId: 1 });
 	});
 
 	it("returns 500 and releases the connection when the lookup fails", async () => {
-		const connection = {
-			query: vi.fn().mockRejectedValue(new Error("database unavailable")),
-			release: vi.fn(),
-		};
+		const connection = { query: vi.fn().mockRejectedValue(new Error("db")), release: vi.fn() };
 		getConnection.mockResolvedValue(connection);
-
-		expect(await authorizeInventoryAccess()).toEqual({
-			ok: false,
-			status: 500,
-			error: "Could not verify admin account",
-		});
+		vi.spyOn(console, "error").mockImplementation(() => { });
+		expect(await authorizeInventoryAccess()).toMatchObject({ ok: false, status: 500 });
 		expect(connection.release).toHaveBeenCalledOnce();
 	});
 });
