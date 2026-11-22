@@ -2,6 +2,7 @@
 import React from "react";
 import { useContext } from "react"
 import { CartContext } from "@/app/CartContext";
+import Link from "next/link";
 
 export default function CartPage() {
   const cart = useContext(CartContext);
@@ -127,7 +128,8 @@ export default function CartPage() {
               </div>
             </div>
 
-            <button
+            <Link
+              href="/checkout"
               className="mt-6 flex w-full items-center justify-center rounded-xl bg-gray-900 px-5 py-3.5 text-sm font-semibold text-white transition hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2"
             >
               Go to checkout
@@ -143,7 +145,7 @@ export default function CartPage() {
                   clipRule="evenodd"
                 />
               </svg>
-            </button>
+            </Link>
 
             <p className="mt-4 text-center text-xs text-gray-500">
               Taxes and shipping are calculated at checkout.
