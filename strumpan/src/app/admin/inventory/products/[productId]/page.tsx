@@ -18,10 +18,10 @@ type Product = { product_id: number; product_name: string; variants: Variant[] }
 type VariantField = "sku" | "color" | "size";
 
 const inputClass = (invalid: boolean) =>
-  `w-full rounded-md border bg-zinc-900 px-3 py-2 text-zinc-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400 ${invalid ? "border-red-500" : "border-zinc-700"
+  `w-full rounded-md border bg-white px-3 py-2 text-gray-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 ${invalid ? "border-red-500" : "border-gray-500"
   }`;
 const btn =
-  "rounded border border-zinc-600 px-3 py-1 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400";
+  "rounded border border-gray-500 px-3 py-1 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600";
 
 class ApiError extends Error {
   field?: string;
@@ -99,7 +99,7 @@ function VariantEditor({ productName, variant, onChanged }: {
   const id = variant.variant_id;
 
   return (
-    <li className="space-y-3 rounded-lg border border-zinc-800 p-4">
+    <li className="space-y-3 rounded-lg border border-gray-300 p-4">
       <div className="grid gap-3 sm:grid-cols-3">
         <div>
           <label htmlFor={`sku-${id}`} className="mb-2 block text-sm">SKU</label>
@@ -107,7 +107,7 @@ function VariantEditor({ productName, variant, onChanged }: {
             aria-invalid={Boolean(fieldErrors.sku)}
             aria-describedby={fieldErrors.sku ? `sku-${id}-error` : undefined}
             onChange={(e) => setSku(e.target.value)} />
-          {fieldErrors.sku && <p id={`sku-${id}-error`} className="mt-1 text-sm text-red-300">{fieldErrors.sku}</p>}
+          {fieldErrors.sku && <p id={`sku-${id}-error`} className="mt-1 text-sm text-red-700">{fieldErrors.sku}</p>}
         </div>
         <div>
           <label htmlFor={`color-${id}`} className="mb-2 block text-sm">Colour</label>
@@ -115,7 +115,7 @@ function VariantEditor({ productName, variant, onChanged }: {
             aria-invalid={Boolean(fieldErrors.color)}
             aria-describedby={fieldErrors.color ? `color-${id}-error` : undefined}
             onChange={(e) => setColor(e.target.value)} />
-          {fieldErrors.color && <p id={`color-${id}-error`} className="mt-1 text-sm text-red-300">{fieldErrors.color}</p>}
+          {fieldErrors.color && <p id={`color-${id}-error`} className="mt-1 text-sm text-red-700">{fieldErrors.color}</p>}
         </div>
         <div>
           <label htmlFor={`size-${id}`} className="mb-2 block text-sm">Size</label>
@@ -123,10 +123,10 @@ function VariantEditor({ productName, variant, onChanged }: {
             aria-invalid={Boolean(fieldErrors.size)}
             aria-describedby={fieldErrors.size ? `size-${id}-error` : undefined}
             onChange={(e) => setSize(e.target.value)} />
-          {fieldErrors.size && <p id={`size-${id}-error`} className="mt-1 text-sm text-red-300">{fieldErrors.size}</p>}
+          {fieldErrors.size && <p id={`size-${id}-error`} className="mt-1 text-sm text-red-700">{fieldErrors.size}</p>}
         </div>
       </div>
-      <p className="text-sm text-zinc-400">Current stock: {variant.quantity}</p>
+      <p className="text-sm text-gray-600">Current stock: {variant.quantity}</p>
       <div className="flex flex-wrap items-start gap-3">
         <button type="button" className={btn} onClick={save} disabled={busy}>Save variant</button>
         <StockEditor
@@ -141,7 +141,7 @@ function VariantEditor({ productName, variant, onChanged }: {
           Delete variant
         </button>
       </div>
-      {message && <p role="status" className="text-sm text-zinc-300">{message}</p>}
+      {message && <p role="status" className="text-sm text-gray-600">{message}</p>}
       <ConfirmDialog
         open={confirmOpen}
         title="Delete variant?"
@@ -230,8 +230,8 @@ export default function EditProductPage({ params }: { params: Promise<{ productI
     }
   }
 
-  if (loading) return <p role="status" className="py-8 text-zinc-300">Loading product…</p>;
-  if (error || !product) return <p role="alert" className="py-8 text-red-300">{error ?? "Product not found."}</p>;
+  if (loading) return <p role="status" className="py-8 text-gray-600">Loading product…</p>;
+  if (error || !product) return <p role="alert" className="py-8 text-red-700">{error ?? "Product not found."}</p>;
 
   return (
     <main className="max-w-3xl space-y-6">
@@ -249,13 +249,13 @@ export default function EditProductPage({ params }: { params: Promise<{ productI
             onChange={(e) => setName(e.target.value)} />
           <button type="button" className={btn} onClick={saveName}>Save name</button>
         </div>
-        {nameError && <p id="product-name-error" className="mt-1 text-sm text-red-300">{nameError}</p>}
+        {nameError && <p id="product-name-error" className="mt-1 text-sm text-red-700">{nameError}</p>}
       </div>
 
       <section aria-labelledby="variants-heading" className="space-y-4">
         <h2 id="variants-heading" className="text-xl font-semibold">Variants</h2>
         {product.variants.length === 0 ? (
-          <p className="text-zinc-400">This product has no variants.</p>
+          <p className="text-gray-600">This product has no variants.</p>
         ) : (
           <ul className="space-y-4">
             {product.variants.map((v) => (
@@ -267,11 +267,11 @@ export default function EditProductPage({ params }: { params: Promise<{ productI
         <AddVariantForm productId={product.product_id} onAdded={reload} />
       </section>
 
-      <button type="button" className={`${btn} border-red-700 text-red-300`} onClick={() => setConfirmOpen(true)}>
+      <button type="button" className={`${btn} border-red-700 text-red-700`} onClick={() => setConfirmOpen(true)}>
         Delete product
       </button>
 
-      {message && <p role="status" className="text-sm text-zinc-300">{message}</p>}
+      {message && <p role="status" className="text-sm text-gray-600">{message}</p>}
 
       <ConfirmDialog
         open={confirmOpen}

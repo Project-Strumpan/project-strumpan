@@ -8,9 +8,9 @@ type Errors = Partial<Record<FieldName, string>>;
 const FIELDS: FieldName[] = ["sku", "color", "size", "quantity"];
 
 const baseInput =
-    "w-full rounded-md border bg-zinc-900 px-3 py-2 text-zinc-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400";
+    "w-full rounded-md border bg-white px-3 py-2 text-gray-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600";
 const inputClass = (invalid: boolean) =>
-    `${baseInput} ${invalid ? "border-red-500" : "border-zinc-700"}`;
+    `${baseInput} ${invalid ? "border-red-500" : "border-gray-500"}`;
 
 function isFieldName(value: unknown): value is FieldName {
     return typeof value === "string" && (FIELDS as string[]).includes(value);
@@ -95,7 +95,7 @@ export default function AddVariantForm({ productId, onAdded }: {
     }
 
     return (
-        <form onSubmit={submit} noValidate className="space-y-3 rounded-lg border border-zinc-800 p-4">
+        <form onSubmit={submit} noValidate className="space-y-3 rounded-lg border border-gray-300 p-4">
             <h3 className="text-lg font-semibold">Add variant</h3>
             <div className="grid gap-3 sm:grid-cols-4">
                 <div>
@@ -104,7 +104,7 @@ export default function AddVariantForm({ productId, onAdded }: {
                         aria-invalid={Boolean(errors.sku)}
                         aria-describedby={errors.sku ? "new-variant-sku-error" : undefined}
                         onChange={(e) => setSku(e.target.value)} />
-                    {errors.sku && <p id="new-variant-sku-error" className="mt-1 text-sm text-red-300">{errors.sku}</p>}
+                    {errors.sku && <p id="new-variant-sku-error" className="mt-1 text-sm text-red-700">{errors.sku}</p>}
                 </div>
                 <div>
                     <label htmlFor="new-variant-color" className="mb-2 block text-sm">Colour</label>
@@ -112,7 +112,7 @@ export default function AddVariantForm({ productId, onAdded }: {
                         aria-invalid={Boolean(errors.color)}
                         aria-describedby={errors.color ? "new-variant-color-error" : undefined}
                         onChange={(e) => setColor(e.target.value)} />
-                    {errors.color && <p id="new-variant-color-error" className="mt-1 text-sm text-red-300">{errors.color}</p>}
+                    {errors.color && <p id="new-variant-color-error" className="mt-1 text-sm text-red-700">{errors.color}</p>}
                 </div>
                 <div>
                     <label htmlFor="new-variant-size" className="mb-2 block text-sm">Size</label>
@@ -120,7 +120,7 @@ export default function AddVariantForm({ productId, onAdded }: {
                         aria-invalid={Boolean(errors.size)}
                         aria-describedby={errors.size ? "new-variant-size-error" : undefined}
                         onChange={(e) => setSize(e.target.value)} />
-                    {errors.size && <p id="new-variant-size-error" className="mt-1 text-sm text-red-300">{errors.size}</p>}
+                    {errors.size && <p id="new-variant-size-error" className="mt-1 text-sm text-red-700">{errors.size}</p>}
                 </div>
                 <div>
                     <label htmlFor="new-variant-quantity" className="mb-2 block text-sm">Quantity</label>
@@ -129,14 +129,14 @@ export default function AddVariantForm({ productId, onAdded }: {
                         aria-invalid={Boolean(errors.quantity)}
                         aria-describedby={errors.quantity ? "new-variant-quantity-error" : undefined}
                         onChange={(e) => setQuantity(e.target.value)} />
-                    {errors.quantity && <p id="new-variant-quantity-error" className="mt-1 text-sm text-red-300">{errors.quantity}</p>}
+                    {errors.quantity && <p id="new-variant-quantity-error" className="mt-1 text-sm text-red-700">{errors.quantity}</p>}
                 </div>
             </div>
             <button type="submit" disabled={saving}
-                className="rounded border border-zinc-600 px-3 py-2 text-sm disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400">
+                className="rounded border border-gray-500 px-3 py-2 text-sm disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
                 {saving ? "Adding…" : "Add variant"}
             </button>
-            {message && <p role="status" className="text-sm text-zinc-300">{message}</p>}
+            {message && <p role="status" className="text-sm text-gray-600">{message}</p>}
         </form>
     );
 }

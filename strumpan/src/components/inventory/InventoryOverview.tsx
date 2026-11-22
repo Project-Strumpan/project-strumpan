@@ -12,7 +12,7 @@ import StockEditor from "./StockEditor";
 
 
 const controlClass =
-  "w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-zinc-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400";
+  "w-full rounded-md border border-gray-500 bg-white px-3 py-2 text-gray-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600";
 
 
 export default function InventoryOverview() {
@@ -115,7 +115,7 @@ export default function InventoryOverview() {
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold">Inventory</h1>
-          <p className="mt-2 text-zinc-400">
+          <p className="mt-2 text-gray-600">
             View and manage stock levels by product variant, colour and size.
           </p>
         </div>
@@ -123,7 +123,7 @@ export default function InventoryOverview() {
 
         <Link
           href="/admin/inventory/products/new"
-          className="rounded bg-emerald-600 px-4 py-2 text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300"
+          className="rounded bg-zinc-800 px-4 py-2 text-white hover:bg-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
         >
           Add product
         </Link>
@@ -131,22 +131,22 @@ export default function InventoryOverview() {
 
 
       {loading ? (
-        <p role="status" className="py-8 text-zinc-300">
+        <p role="status" className="py-8 text-gray-600">
           Loading inventory…
         </p>
       ) : error ? (
-        <div role="alert" className="rounded-lg border border-red-700 p-4">
+        <div role="alert" className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">
           <p>{error}</p>
           <button
             type="button"
             onClick={() => setReloadKey((value) => value + 1)}
-            className="mt-3 rounded border border-zinc-600 px-4 py-2 hover:bg-zinc-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400"
+            className="mt-3 rounded border border-gray-500 px-4 py-2 hover:bg-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
           >
             Try again
           </button>
         </div>
       ) : items.length === 0 ? (
-        <p role="status" className="py-8 text-zinc-300">
+        <p role="status" className="py-8 text-gray-600">
           No inventory items are available.
         </p>
       ) : (
@@ -226,7 +226,7 @@ export default function InventoryOverview() {
 
 
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <p role="status" className="text-sm text-zinc-400">
+            <p role="status" className="text-sm text-gray-600">
               Showing {filteredItems.length} of {items.length} variants
             </p>
 
@@ -234,7 +234,7 @@ export default function InventoryOverview() {
             <button
               type="button"
               onClick={resetFilters}
-              className="rounded px-2 py-1 text-sm underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400"
+              className="rounded px-2 py-1 text-sm underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
             >
               Reset filters
             </button>
@@ -242,18 +242,18 @@ export default function InventoryOverview() {
 
 
           {filteredItems.length === 0 ? (
-            <p className="rounded-lg border border-zinc-800 p-6 text-zinc-300">
+            <p className="rounded-lg border border-gray-300 p-6 text-gray-600">
               No variants match your filters.
             </p>
           ) : (
-            <div className="overflow-x-auto rounded-lg border border-zinc-800">
+            <div className="overflow-x-auto rounded-lg border border-gray-300">
               <table className="w-full text-left text-sm">
                 <caption className="sr-only">
                   Inventory quantities for each product variant
                 </caption>
 
 
-                <thead className="bg-zinc-900 text-zinc-300">
+                <thead className="bg-surface text-gray-900">
                   <tr>
                     <th scope="col" className="px-4 py-3">Product</th>
                     <th scope="col" className="px-4 py-3">SKU</th>
@@ -269,12 +269,12 @@ export default function InventoryOverview() {
                   {filteredItems.map((item) => (
                     <tr
                       key={item.variantId}
-                      className="border-t border-zinc-800"
+                      className="border-t border-gray-300"
                     >
                       <th scope="row" className="px-4 py-3 font-medium">
                         {item.productName}
                       </th>
-                      <td className="whitespace-nowrap px-4 py-3 text-zinc-300">
+                      <td className="whitespace-nowrap px-4 py-3 text-gray-600">
                         {item.sku}
                       </td>
                       <td className="px-4 py-3">{item.color ?? "—"}</td>
@@ -284,7 +284,7 @@ export default function InventoryOverview() {
                       <td className="px-4 py-3 text-right tabular-nums">
                         {item.quantity}
                         {item.quantity === 0 && (
-                          <span className="ml-2 text-red-300">
+                          <span className="ml-2 rounded-full bg-rose-50 px-2 py-0.5 text-xs font-medium text-rose-700">
                             Out of stock
                           </span>
                         )}
@@ -297,7 +297,7 @@ export default function InventoryOverview() {
                           />
                           <Link
                             href={`/admin/inventory/products/${item.productId}`}
-                            className="rounded border border-zinc-600 px-3 py-1 hover:bg-zinc-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400"
+                            className="rounded border border-gray-500 px-3 py-1 hover:bg-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
                           >
                             Edit product
                             <span className="sr-only"> {item.productName}</span>

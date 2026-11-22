@@ -7,8 +7,8 @@ export default function AdminLayout({
   children: ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100">
-      <header className="border-b border-zinc-800">
+    <div className="text-gray-900">
+      <header className="border-b border-gray-300">
         <nav
           aria-label="Admin navigation"
           className="mx-auto flex max-w-7xl flex-wrap items-center gap-6 px-4 py-5"
@@ -19,14 +19,14 @@ export default function AdminLayout({
 
           <Link
             href="/admin/inventory"
-            className="rounded hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-400"
+            className="rounded hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-indigo-600"
           >
             Inventory
           </Link>
 
           <Link
             href="/"
-            className="ml-auto rounded text-sm text-zinc-300 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-400"
+            className="ml-auto rounded text-sm text-gray-600 hover:text-gray-900 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-indigo-600"
           >
             Back to storefront
           </Link>

@@ -4,11 +4,13 @@
   --background: #E7DDD0;
   --foreground: #171717;
   --text-color: #000000;
+  --surface: #EDE6DD;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }

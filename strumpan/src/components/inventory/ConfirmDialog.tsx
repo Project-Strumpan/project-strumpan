@@ -42,17 +42,17 @@ export default function ConfirmDialog({
             onClose={() => {
                 if (open) onCancel();
             }}
-            className="m-auto w-full max-w-md rounded-lg border border-zinc-700 bg-zinc-900 p-6 text-zinc-100 backdrop:bg-black/60"
+            className="m-auto w-full max-w-md rounded-lg border border-gray-500 bg-surface p-6 text-gray-900 backdrop:bg-black/60"
         >
             <h2 id={titleId} className="text-lg font-semibold">{title}</h2>
-            <p id={messageId} className="mt-2 text-sm text-zinc-300">{message}</p>
+            <p id={messageId} className="mt-2 text-sm text-gray-600">{message}</p>
             <div className="mt-6 flex justify-end gap-3">
                 <button ref={cancelRef} type="button" onClick={onCancel} disabled={busy}
-                    className="rounded border border-zinc-600 px-3 py-1 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400">
+                    className="rounded border border-gray-500 px-3 py-1 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
                     Cancel
                 </button>
                 <button type="button" onClick={onConfirm} disabled={busy}
-                    className="rounded border border-red-700 bg-red-900 px-3 py-1 text-sm text-red-100 disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-300">
+                    className="rounded border border-red-800 bg-red-700 px-3 py-1 text-sm text-white disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-800">
                     {busy ? "Deleting…" : confirmLabel}
                 </button>
             </div>

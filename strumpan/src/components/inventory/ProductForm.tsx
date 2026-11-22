@@ -10,11 +10,11 @@ type FieldErrors = Record<string, string>;
 const emptyVariant: VariantRow = { sku: "", color: "", size: "", quantity: "0" };
 
 const baseInput =
-  "w-full rounded-md border bg-zinc-900 px-3 py-2 text-zinc-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400";
+  "w-full rounded-md border bg-white px-3 py-2 text-gray-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600";
 const inputClass = (invalid: boolean) =>
-  `${baseInput} ${invalid ? "border-red-500" : "border-zinc-700"}`;
+  `${baseInput} ${invalid ? "border-red-500" : "border-gray-500"}`;
 const outlineBtn =
-  "rounded border border-zinc-600 px-3 py-1 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400";
+  "rounded border border-gray-500 px-3 py-1 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600";
 
 const VARIANT_KEY = /^variants\.(\d+)\.(sku|color|size|quantity)$/;
 
@@ -41,7 +41,7 @@ function focusFirst(errors: FieldErrors) {
 function FieldError({ id, message }: { id: string; message?: string }) {
   if (!message) return null;
   return (
-    <p id={id} tabIndex={-1} className="mt-1 text-sm text-red-300">
+    <p id={id} tabIndex={-1} className="mt-1 text-sm text-red-700">
       {message}
     </p>
   );
@@ -151,7 +151,7 @@ export default function ProductForm() {
   return (
     <form onSubmit={submit} className="max-w-3xl space-y-6" noValidate>
       {(formError || hasFieldErrors) && (
-        <p role="alert" className="rounded-lg border border-red-700 p-3 text-red-300">
+        <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-red-700">
           {formError ?? "Please fix the highlighted fields."}
         </p>
       )}
@@ -191,7 +191,7 @@ export default function ProductForm() {
           </select>
           <FieldError id="category-id-error" message={fieldErrors.categoryId} />
           {categoriesError && (
-            <p id="category-load-error" role="alert" className="mt-1 text-sm text-red-300">
+            <p id="category-load-error" role="alert" className="mt-1 text-sm text-red-700">
               {categoriesError}
             </p>
           )}
@@ -206,7 +206,7 @@ export default function ProductForm() {
           const sizeErr = fieldErrors[`variants.${i}.size`];
           const qtyErr = fieldErrors[`variants.${i}.quantity`];
           return (
-            <div key={i} className="grid gap-3 rounded-lg border border-zinc-800 p-4 sm:grid-cols-4">
+            <div key={i} className="grid gap-3 rounded-lg border border-gray-300 p-4 sm:grid-cols-4">
               <div>
                 <label htmlFor={`sku-${i}`} className="mb-2 block text-sm">SKU</label>
                 <input id={`sku-${i}`} className={inputClass(Boolean(skuErr))} value={v.sku}
@@ -252,12 +252,12 @@ export default function ProductForm() {
         </button>
       </fieldset>
 
-      <p className="text-sm text-zinc-400">
+      <p className="text-sm text-gray-600">
         The price is set later by the owner.
       </p>
 
       <button type="submit" disabled={saving}
-        className="rounded bg-emerald-600 px-5 py-2 text-white disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300">
+        className="rounded bg-zinc-800 px-5 py-2 text-white hover:bg-zinc-700 disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
         {saving ? "Saving…" : "Create product"}
       </button>
     </form>

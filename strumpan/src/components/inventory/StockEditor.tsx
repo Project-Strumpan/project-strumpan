@@ -51,7 +51,7 @@ export default function StockEditor({ item, onSaved }: Props) {
           setMessage(null);
           setEditing(true);
         }}
-        className="rounded border border-zinc-600 px-3 py-1 hover:bg-zinc-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400"
+        className="rounded border border-gray-500 px-3 py-1 hover:bg-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
       >
         Edit stock<span className="sr-only"> for {item.sku}</span>
       </button>
@@ -60,7 +60,7 @@ export default function StockEditor({ item, onSaved }: Props) {
 
   return (
     <div className="space-y-2">
-      <p className="text-xs text-zinc-400">
+      <p className="text-xs text-gray-600">
         {item.productName} · {item.sku} · {item.color ?? "—"} · {item.size} ·
         current {item.quantity}
       </p>
@@ -76,13 +76,13 @@ export default function StockEditor({ item, onSaved }: Props) {
           value={value}
           onChange={(event) => setValue(event.target.value)}
           disabled={saving}
-          className="w-24 rounded-md border border-zinc-700 bg-zinc-900 px-2 py-1 text-zinc-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400"
+          className="w-24 rounded-md border border-gray-500 bg-white px-2 py-1 text-gray-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
         />
         <button
           type="button"
           onClick={save}
           disabled={saving}
-          className="rounded bg-emerald-600 px-3 py-1 text-white disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300"
+          className="rounded bg-zinc-800 px-3 py-1 text-white hover:bg-zinc-700 disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
         >
           {saving ? "Saving…" : "Save"}
         </button>
@@ -90,13 +90,13 @@ export default function StockEditor({ item, onSaved }: Props) {
           type="button"
           onClick={() => setEditing(false)}
           disabled={saving}
-          className="rounded border border-zinc-600 px-3 py-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400"
+          className="rounded border border-gray-500 px-3 py-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
         >
           Cancel
         </button>
       </div>
       {message && (
-        <p role="alert" className="text-sm text-red-300">
+        <p role="alert" className="text-sm text-red-700">
           {message}
         </p>
       )}
