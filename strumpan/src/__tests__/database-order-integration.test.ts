@@ -8,13 +8,29 @@ import { NextRequest } from "next/server";
 describe("MariaDB Live Integration: Databasvalidering av sparade ordrar och varor", () => {
   let createdOrderIds: number[] = [];
   let testCustomerEmails: string[] = [];
+  let originalStockLevels: { variant_id: number; quantity: number }[] = [];
 
-  // Verifiera att databasen är tillgänglig
+  // Verifiera att databasen är tillgänglig och säkra lagersaldo för testet
   before(async () => {
     try {
       const conn = await pool.getConnection();
       const [row] = await conn.query<any[]>("SELECT DATABASE() AS db");
       assert.ok(row.db, "MariaDB-databasen måste vara vald och ansluten.");
+
+      // Spara nuvarande lagersaldo för varianterna 1–6
+      const rows = await conn.query<any[]>(
+        "SELECT variant_id, quantity FROM Inventory WHERE variant_id BETWEEN 1 AND 6"
+      );
+      originalStockLevels = rows.map((r) => ({
+        variant_id: Number(r.variant_id),
+        quantity: Number(r.quantity),
+      }));
+
+      // Sätt saldot till minst 10 så att testerna aldrig slår i 0
+      await conn.query(
+        "UPDATE Inventory SET quantity = GREATEST(quantity, 10) WHERE variant_id BETWEEN 1 AND 6"
+      );
+
       conn.release();
     } catch (err) {
       console.error("Kunde inte ansluta till MariaDB i integrationstest:", err);
@@ -22,10 +38,19 @@ describe("MariaDB Live Integration: Databasvalidering av sparade ordrar och varo
     }
   });
 
-  // Städa upp eventuella testordrar och avsluta anslutningen
+  // Städa upp eventuella testordrar, återställ lagersaldon och avsluta anslutningen
   after(async () => {
     try {
       const conn = await pool.getConnection();
+
+      // Återställ sparade lagersaldon så att testerna är icke-destruktiva
+      for (const item of originalStockLevels) {
+        await conn.query(
+          "UPDATE Inventory SET quantity = ? WHERE variant_id = ?",
+          [item.quantity, item.variant_id]
+        );
+      }
+
       for (const orderId of createdOrderIds) {
         await conn.query("DELETE FROM Orders WHERE order_id = ?", [orderId]);
       }
