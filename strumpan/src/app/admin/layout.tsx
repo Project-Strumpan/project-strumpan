@@ -25,6 +25,27 @@ export default function AdminLayout({
           </Link>
 
           <Link
+            href="/admin/categories"
+            className="rounded hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-indigo-600"
+          >
+            Categories
+          </Link>
+
+          <Link
+            href="/admin/orders"
+            className="rounded hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-indigo-600"
+          >
+            Orders & Summaries
+          </Link>
+
+          <Link
+            href="/admin/audit-log"
+            className="rounded hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-indigo-600"
+          >
+            Audit Log
+          </Link>
+
+          <Link
             href="/"
             className="ml-auto rounded text-sm text-gray-600 hover:text-gray-900 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-indigo-600"
           >

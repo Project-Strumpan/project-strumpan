@@ -155,6 +155,84 @@ function VariantEditor({ productName, variant, onChanged }: {
   );
 }
 
+function PriceEditor({ productId }: { productId: number }) {
+  const [price, setPrice] = useState<string>("");
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    async function loadPrice() {
+      try {
+        const data = await send(`/api/admin/products/${productId}/price`, "GET");
+        setPrice(String(data.price));
+      } catch (e) {
+        // If 403 Forbidden, user is not owner (inventory admin) - hide or disable gracefully
+      } finally {
+        setInitialLoading(false);
+      }
+    }
+    void loadPrice();
+  }, [productId]);
+
+  async function savePrice() {
+    setError(null);
+    setMessage(null);
+    setBusy(true);
+    try {
+      const num = parseFloat(price);
+      if (isNaN(num) || num < 0) {
+        setError("Please enter a valid price (>= 0).");
+        setBusy(false);
+        return;
+      }
+      const res = await send(`/api/admin/products/${productId}/price`, "PATCH", { price: num });
+      setPrice(String(res.price));
+      setMessage("Price updated successfully.");
+    } catch (e: any) {
+      setError(e.message || "Failed to update price.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (initialLoading) return null;
+
+  return (
+    <div className="rounded-lg border border-gray-300 bg-gray-50 p-4">
+      <h3 className="mb-2 text-sm font-semibold uppercase tracking-wider text-gray-700">Sales Price (Main Admin)</h3>
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="relative max-w-xs">
+          <input
+            id="product-price"
+            type="number"
+            step="0.01"
+            min="0"
+            className={`${inputClass(Boolean(error))} pr-12`}
+            value={price}
+            aria-invalid={Boolean(error)}
+            aria-describedby={error ? "product-price-error" : undefined}
+            onChange={(e) => setPrice(e.target.value)}
+            disabled={busy}
+          />
+          <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-gray-500">
+            SEK
+          </span>
+        </div>
+        <button type="button" className={btn} onClick={savePrice} disabled={busy}>
+          {busy ? "Saving…" : "Save price"}
+        </button>
+      </div>
+      {error && <p id="product-price-error" className="mt-1 text-sm text-red-700">{error}</p>}
+      {message && <p role="status" className="mt-1 text-sm text-emerald-700">{message}</p>}
+      <p className="mt-2 text-xs text-gray-500">
+        Updating this price will only affect new customer purchases. Existing placed orders will retain their original historical prices.
+      </p>
+    </div>
+  );
+}
+
 export default function EditProductPage({ params }: { params: Promise<{ productId: string }> }) {
   const { productId } = use(params);
   const router = useRouter();
@@ -251,6 +329,8 @@ export default function EditProductPage({ params }: { params: Promise<{ productI
         </div>
         {nameError && <p id="product-name-error" className="mt-1 text-sm text-red-700">{nameError}</p>}
       </div>
+
+      <PriceEditor productId={product.product_id} />
 
       <section aria-labelledby="variants-heading" className="space-y-4">
         <h2 id="variants-heading" className="text-xl font-semibold">Variants</h2>
