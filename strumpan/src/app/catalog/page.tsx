@@ -3,11 +3,12 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import type { CatalogueProduct, ProductVariant, ProductWithVariants } from "@/types/product";
+import "@/app/globals.css";
 
 type CatalogProductItem = CatalogueProduct & {
   variants?: ProductVariant[];
 };
-
+//#region  
 export default function ProductCatalog() {
   const [products, setProducts] = useState<CatalogProductItem[]>([]);
   const [selectedSize, setSelectedSize] = useState("");
@@ -63,8 +64,8 @@ export default function ProductCatalog() {
     return Array.from(sizes).sort();
   }, [products]);
 
-  const filteredProducts = useMemo(() => {
-    return products.filter((product: CatalogProductItem) => {
+  const filteredProducts = useMemo(() => { 
+    return products.filter((product: CatalogProductItem) => { 
       const matchesSize =
         selectedSize === "" ||
         (product.variants &&
@@ -91,23 +92,23 @@ export default function ProductCatalog() {
         {error}
       </div>
     );
-  }
-
+  } 
+  //#endregion
   return (
     <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight text-zinc-800">
+        <h1 className="text-3xl font-bold tracking-tight text-zinc-800 dark:text-(--text-color)">
           Strumpor & Sortiment
         </h1>
-        <p className="mt-2 text-sm text-gray-600">
+        <p className="mt-2 text-sm text-gray-600 dark:text-(--text-color2)">
           Utforska vårt utbud av bekväma strumpor för alla tillfällen.
         </p>
       </div>
 
       {/* Filter-sektion */}
       <div className="bg-foreground p-4 rounded-xl shadow-sm mb-6 flex flex-wrap items-end gap-4">
-        <div className="flex flex-col gap-1.5 flex-1 min-w-[140px]">
-          <label htmlFor="size-filter" className="text-xs font-semibold text-zinc-800 uppercase tracking-wider">
+        <div className="flex flex-col gap-1.5 flex-1 min-w-35">
+          <label htmlFor="size-filter" className="text-xs font-semibold text-zinc-800 dark:text-mauve-500 uppercase tracking-wider">
             Storlek
           </label>
           <select
@@ -126,7 +127,7 @@ export default function ProductCatalog() {
         </div>
 
         <div className="flex flex-col gap-1.5 flex-1 min-w-[140px]">
-          <label htmlFor="price-filter" className="text-xs font-semibold text-zinc-800 uppercase tracking-wider">
+          <label htmlFor="price-filter" className="text-xs font-semibold text-zinc-800 dark:text-mauve-500 uppercase tracking-wider">
             Maxpris (kr)
           </label>
           <input
@@ -136,7 +137,7 @@ export default function ProductCatalog() {
             placeholder="Exempel: 150"
             value={maxPrice}
             onChange={(event) => setMaxPrice(event.target.value)}
-            className="w-full rounded-lg border border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+            className="w-full rounded-lg border border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-black dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
           />
         </div>
 
@@ -152,7 +153,7 @@ export default function ProductCatalog() {
         </button>
       </div>
 
-      <p className="text-sm text-zinc-800 mb-6">
+      <p className="text-sm text-zinc-800 dark:text-mauve-500 mb-6">
         Visar <span className="font-semibold text-white">{filteredProducts.length}</span> av {products.length} produkter
       </p>
 
@@ -163,7 +164,7 @@ export default function ProductCatalog() {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <div className="grid bg-grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
           {filteredProducts.map((product: CatalogProductItem) => {
             const totalStock = product.variants?.reduce(
               (acc: number, v: ProductVariant) => acc + (v.available_quantity ?? 0),
@@ -184,7 +185,7 @@ export default function ProductCatalog() {
               >
                 <div>
                   {/* Bildruta som visar bild om den finns och fungerar, annars "Bild saknas" */}
-                  <div className="relative w-full h-48 mb-4 overflow-hidden rounded-lg bg-gray-100 dark:bg-zinc-800 flex items-center justify-center">
+                  <div className="relative w-full h-80 mb-4 bg-background overflow-hidden rounded-lg dark:bg-zinc-800 flex items-center justify-center">
                     {product.image_url && !hasImageError ? (
                       <img
                         src={product.image_url}
@@ -204,7 +205,7 @@ export default function ProductCatalog() {
                     )}
                   </div>
 
-                  <h2 className="text-lg font-semibold text-zinc-800 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                  <h2 className="text-lg font-semibold text-zinc-800 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                     {product.name}
                   </h2>
 
@@ -235,7 +236,7 @@ export default function ProductCatalog() {
                         ? uniqueSizes.join(", ")
                         : "Inga storlekar"}
                     </span>
-                    <p className="text-lg font-bold text-gray-900 dark:text-white whitespace-nowrap">
+                    <p className="text-lg font-bold text-gray-900 dark:text-gray-200 whitespace-nowrap">
                       {product.price} kr
                     </p>
                   </div>

@@ -16,21 +16,21 @@ export default function CartPage() {
   const total = subtotal + shipping;
 
   return (
-    <main className="min-h-screen bg-gray-50 px-4 py-10 sm:px-6 lg:px-8">
+    <main className="min-h-screen bg-background px-4 py-10 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
         {/* Header */}
         <div className="mb-10">
           <p className="text-sm font-medium text-gray-500">Shopping cart</p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-gray-900 sm:text-4xl">
+          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-gray-900 dark:text-(--text-color) sm:text-4xl">
             Your cart
           </h1>
         </div>
 
         <div className="grid gap-8 lg:grid-cols-[1fr_400px]">
           {/* Cart items */}
-          <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+          <section className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-foreground dark:bg-(--foreground2) p-6 shadow-sm">
             <div className="mb-6 flex items-center justify-between border-b border-gray-100 pb-5">
-              <h2 className="text-lg font-semibold text-gray-900">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-(--text-color)">
                 Cart items
               </h2>
 
@@ -71,7 +71,7 @@ export default function CartPage() {
 
                     <div className="mt-4 flex items-center justify-between">
                       {/* Quantity */}
-                      <div className="flex items-center rounded-lg border border-gray-200">
+                      <div className="flex items-center rounded-lg border border-gray-200 dark:border-gray-400">
                         <button
                           className="flex h-8 w-8 items-center justify-center text-gray-500 transition hover:bg-gray-50 hover:text-gray-900"
                           aria-label="Decrease quantity" onClick={() => cart!.removeOneFromCart(item.id)}
@@ -102,8 +102,8 @@ export default function CartPage() {
           </section>
 
           {/* Order summary */}
-          <aside className="h-fit rounded-2xl border border-gray-200 bg-white p-6 shadow-sm lg:sticky lg:top-8">
-            <h2 className="text-lg font-semibold text-gray-900">
+          <aside className="h-fit rounded-2xl border border-gray-200 dark:border-gray-800 bg-foreground dark:bg-(--foreground2) p-6 shadow-sm lg:sticky lg:top-8">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-(--text-color)">
               Order summary
             </h2>
 
@@ -120,8 +120,8 @@ export default function CartPage() {
                 </span>
               </div>
 
-              <div className="border-t border-gray-100 pt-4">
-                <div className="flex justify-between text-base font-semibold text-gray-900">
+              <div className="border-t-2 border-gray-100 dark:border-gray-400 pt-4">
+                <div className="flex justify-between text-base font-semibold text-gray-900 dark:text-(--text-color)">
                   <span>Total</span>
                   <span>{total.toFixed(2)} kr</span>
                 </div>

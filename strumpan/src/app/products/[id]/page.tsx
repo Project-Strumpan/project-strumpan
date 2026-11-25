@@ -52,7 +52,7 @@ export default function ProductPage({ params }: ProductPageProps) {
           Produkten du söker existerar inte eller så uppstod ett fel.
         </p>
         <Link
-          href="/"
+          href="/catalog"
           className="inline-flex items-center text-sm font-medium text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 underline"
         >
           ← Tillbaka till produktlistan
@@ -70,7 +70,7 @@ export default function ProductPage({ params }: ProductPageProps) {
   return (
     <div className="w-full max-w-4xl mx-auto px-4 py-8">
       <Link
-        href="/"
+        href="/catalog"
         className="inline-flex items-center text-sm font-medium text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 mb-6 transition-colors"
       >
         ← Tillbaka till produktlistan

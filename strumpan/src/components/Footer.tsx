@@ -8,19 +8,19 @@ export default function Footer() {
     >
       <div className="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 text-center">
         <div className="space-y-2">
-          <h2 className="font-semibold text-base text-zinc-800 mb-3">
+          <h2 className="font-semibold text-base text-zinc-800 mb-3 dark:text-(--text-footer1)">
             <Link href="/support-contact" className="hover:underline">
               Contact us
             </Link>
           </h2>
           <p>
-            <span className="font-medium text-gray-900">Email:</span>{" "}
+            <span className="font-medium text-gray-900 dark:text-(--text-footer1)">Email:</span>{" "}
             <a href="mailto:info@example.com" className="hover:underline">
               info@example.com
             </a>
           </p>
           <p>
-            <span className="font-medium text-gray-900">Phone:</span>{" "}
+            <span className="font-medium text-gray-900 dark:text-(--text-footer1)">Phone:</span>{" "}
             <a href="tel:+46123456789" className="hover:underline">
               +46 123 456 789
             </a>
@@ -28,7 +28,7 @@ export default function Footer() {
         </div>
 
         <div className="space-y-2">
-          <h2 className="font-semibold text-base text-zinc-800 mb-3">
+          <h2 className="font-semibold text-base text-zinc-800 dark:text-(--text-footer1) mb-3">
             <Link href="/returns-complaint" className="hover:underline">
               Returns & Complaints
             </Link>
@@ -36,7 +36,7 @@ export default function Footer() {
         </div>
 
         <div className="space-y-2">
-          <h2 className="font-semibold text-base text-zinc-800 mb-3">
+          <h2 className="font-semibold text-base text-zinc-800 dark:text-(--text-footer1) mb-3">
             <Link href="/about" className="hover:underline">
               Om oss
             </Link>
@@ -44,7 +44,7 @@ export default function Footer() {
         </div>
 
         <div className="space-y-2">
-          <h2 className="font-semibold text-base text-zinc-800 mb-3">
+          <h2 className="font-semibold text-base text-zinc-800 dark:text-(--text-footer1) mb-3">
             <Link href="/cookies" className="hover:underline">
               Cookies
             </Link>

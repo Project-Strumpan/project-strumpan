@@ -2,9 +2,10 @@
 
 :root {
   --background: #E7DDD0;
-  --foreground: #171717;
-  --text-color: #000000;
+  --foreground: #EDE6DD;
   --surface: #EDE6DD;
+  --blackOrWhite: #111;
+  --navbar: 
 }
 
 @theme inline {
@@ -17,8 +18,14 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #E7DDD0;
-    --foreground: #EDE6DD;
+    --background: #181a1b;
+    --foreground:#181a1b;
+    --foreground2:#1d1f20;
+    --text-color: #dd562a;
+    --text-color2: #f0bda0;
+    --text-footer1: #d6d4d1;
+    --navbar: #252524;
+    --blackOrWhite: #ffffffbe;
   }
 }
 
