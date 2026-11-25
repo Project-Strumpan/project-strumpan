@@ -232,7 +232,7 @@ export default function AdminOrdersPage() {
                             : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                     }`}
                 >
-                    All Orders (PRO-21)
+                    All Orders
                 </button>
                 <button
                     type="button"
@@ -243,7 +243,7 @@ export default function AdminOrdersPage() {
                             : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                     }`}
                 >
-                    Last 24 hours (PRO-87)
+                    Last 24 hours
                 </button>
                 <button
                     type="button"
@@ -254,7 +254,7 @@ export default function AdminOrdersPage() {
                             : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                     }`}
                 >
-                    Last 7 days (PRO-86)
+                    Last 7 days
                 </button>
             </div>
 

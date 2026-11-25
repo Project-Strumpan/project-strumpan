@@ -134,9 +134,6 @@ function ConfirmationContent() {
                 <div className="inline-flex items-center gap-2 rounded-lg bg-emerald-50 px-4 py-2 text-xs text-emerald-800 border border-emerald-200">
                   <span className="font-semibold">Ordernummer:</span>
                   <span className="font-mono font-bold">#{createdOrder.order_id}</span>
-                  <span className="rounded bg-emerald-200 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-900">
-                    Sparad i MariaDB
-                  </span>
                 </div>
               )}
             </div>

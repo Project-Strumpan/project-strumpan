@@ -339,7 +339,7 @@ export default function AdminCategoriesPage() {
                                                     <div className="flex justify-end gap-2">
                                                         <button
                                                             type="button"
-                                                            className={`${btn} bg-emerald-600 text-white hover:bg-emerald-700`}
+                                                            className="rounded border border-emerald-600 bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white shadow-sm hover:bg-emerald-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50"
                                                             onClick={() => handleSaveEdit(cat.category_id)}
                                                             disabled={updating}
                                                         >
@@ -368,7 +368,7 @@ export default function AdminCategoriesPage() {
                                                             className={`${btn} text-red-600 hover:bg-red-50 ${!canDelete ? "opacity-40 cursor-not-allowed" : ""}`}
                                                             onClick={() => setDeleteTarget(cat)}
                                                             disabled={!canDelete}
-                                                            title={!canDelete ? "Cannot delete category that has products or subcategories (PRO-81 safeguard)" : "Delete category"}
+                                                            title={!canDelete ? "Cannot delete category that has products or subcategories" : "Delete category"}
                                                         >
                                                             Delete
                                                         </button>
