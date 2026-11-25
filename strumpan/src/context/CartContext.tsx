@@ -19,7 +19,6 @@ export interface CartContextType {
   updateQuantity: (id: string, quantity: number) => void;
   clearCart: () => void;
   buyNow: (item: Omit<CartItem, "quantity"> & { quantity?: number }) => void;
-  loadDemoItems: () => void;
 
   // Kompatibilitet med pro-7 branch
   getProductQuantity: (id: string) => number;
@@ -33,32 +32,6 @@ export interface CartContextType {
   selectedCountry: string;
   setSelectedCountry: (countryCode: string) => void;
 }
-
-// Förvalda demoartiklar ifall kunden går direkt till /checkout innan produktsidorna är mergade
-export const DEFAULT_DEMO_ITEMS: CartItem[] = [
-  {
-    id: "1",
-    title: "Klassisk Ullstrumpa - Svart",
-    description: "beskrivning",
-    price: 129,
-    quantity: 2,
-    size: "40-45",
-    color: "Svart",
-    picture_url: "https://images.unsplash.com/photo-1586350977771-b3b0abd50c82?auto=format&fit=crop&w=300&q=80",
-    availableStock: 5
-  },
-  {
-    id: "2",
-    title: "Randig Bomullsstrumpa - Blå/Vit",
-    description: "beskrivning",
-    price: 89,
-    quantity: 1,
-    size: "40-45",
-    color: "Marinblå",
-    picture_url: "https://images.unsplash.com/photo-1582966772680-860e372bb558?auto=format&fit=crop&w=300&q=80",
-    availableStock:10
-  },
-];
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
@@ -148,10 +121,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setItems([]);
   }, []);
 
-  function loadDemoItems() {
-    setItems(DEFAULT_DEMO_ITEMS);
-  }
-
   /**
    * "Köp nu" flöde: Lägger till varan i varukorgen (om den inte redan finns)
    * och skickar kunden direkt till /checkout i 1 klick!
@@ -198,7 +167,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         updateQuantity,
         clearCart,
         buyNow,
-        loadDemoItems,
         getProductQuantity,
         addOneToCart,
         removeOneFromCart,

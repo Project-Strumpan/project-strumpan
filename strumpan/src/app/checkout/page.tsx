@@ -19,7 +19,6 @@ export default function CheckoutPage() {
     setSelectedCountry,
     updateQuantity,
     removeItem,
-    loadDemoItems,
   } = useCart();
 
   const [customerInfo, setCustomerInfo] = useState({
@@ -145,12 +144,6 @@ export default function CheckoutPage() {
             Lägg till produkter i varukorgen för att slutföra ditt köp.
           </p>
           <div className="mt-6 flex flex-col sm:flex-row justify-center gap-3">
-            <button
-              onClick={() => loadDemoItems()}
-              className="rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition cursor-pointer shadow-sm"
-            >
-              Lägg till testprodukter
-            </button>
             <Link
               href="/cart"
               className="rounded-xl border border-gray-300 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition"
