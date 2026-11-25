@@ -13,9 +13,19 @@ export default function AdminLayout({
           aria-label="Admin navigation"
           className="mx-auto flex max-w-7xl flex-wrap items-center gap-6 px-4 py-5"
         >
-          <span className="text-lg font-semibold">
+          <Link
+            href="/admin"
+            className="text-lg font-semibold hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-indigo-600"
+          >
             Strumpan Admin
-          </span>
+          </Link>
+
+          <Link
+            href="/admin"
+            className="rounded hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-indigo-600"
+          >
+            Dashboard
+          </Link>
 
           <Link
             href="/admin/inventory"
@@ -35,7 +45,14 @@ export default function AdminLayout({
             href="/admin/orders"
             className="rounded hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-indigo-600"
           >
-            Orders & Summaries
+            Orders &amp; Summaries
+          </Link>
+
+          <Link
+            href="/admin/admins"
+            className="rounded hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-indigo-600"
+          >
+            Admins &amp; Roles
           </Link>
 
           <Link

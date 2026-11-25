@@ -62,7 +62,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
                 price,
                 picture_url AS image_url
             FROM Products
-            WHERE product_id = ?
+            WHERE product_id = ? AND price > 0
             `,
             [product_id]
         );

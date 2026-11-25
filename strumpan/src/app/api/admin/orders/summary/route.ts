@@ -64,6 +64,37 @@ export async function GET(request: Request) {
             WHERE o.order_date >= (CURRENT_TIMESTAMP - ${intervalClause})
         `);
 
+        // 4. Orders grouped by delivery country
+        const countryRows = await connection.query<Array<{ country: string; orders_count: number | string; total_sales: number | string }>>(`
+            SELECT 
+                COALESCE(NULLIF(TRIM(a.country), ''), 'Unknown') AS country,
+                COUNT(DISTINCT o.order_id) AS orders_count,
+                COALESCE(SUM(o.total_cost), 0) AS total_sales
+            FROM Orders o
+            LEFT JOIN Addresses a ON a.address_id = o.delivery_address_id
+            WHERE o.order_date >= (CURRENT_TIMESTAMP - ${intervalClause})
+            GROUP BY country
+            ORDER BY orders_count DESC, total_sales DESC
+        `);
+
+        const formattedItems = items.map((row) => ({
+            product_id: Number(row.product_id),
+            product_name: row.product_name,
+            variant_id: Number(row.variant_id),
+            size: row.size,
+            color: row.color,
+            sku: row.sku,
+            total_quantity: Number(row.total_quantity),
+            total_revenue: Number(row.total_revenue),
+            orders_count: Number(row.orders_count),
+        }));
+
+        const formattedCountries = (countryRows || []).map((row) => ({
+            country: row.country,
+            orders_count: Number(row.orders_count),
+            total_sales: Number(row.total_sales),
+        }));
+
         return NextResponse.json({
             period: is24h ? "24h" : "7d",
             label,
@@ -72,17 +103,10 @@ export async function GET(request: Request) {
             total_orders: Number(overall?.total_orders || 0),
             total_items_sold: Number(overall?.total_items_sold || 0),
             total_sales: Number(overall?.total_sales || 0),
-            items: items.map((row) => ({
-                product_id: Number(row.product_id),
-                product_name: row.product_name,
-                variant_id: Number(row.variant_id),
-                size: row.size,
-                color: row.color,
-                sku: row.sku,
-                total_quantity: Number(row.total_quantity),
-                total_revenue: Number(row.total_revenue),
-                orders_count: Number(row.orders_count),
-            })),
+            top_product: formattedItems[0] ?? null,
+            top_country: formattedCountries[0] ?? null,
+            top_countries: formattedCountries,
+            items: formattedItems,
         }, { status: 200 });
     } catch (error) {
         console.error("Failed to generate order summary", error);

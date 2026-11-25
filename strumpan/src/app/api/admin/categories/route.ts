@@ -61,7 +61,15 @@ export async function GET() {
             ORDER BY c.category_name ASC
         `);
 
-        const formatted = buildCategoryHierarchy(rows);
+        const normalized = rows.map((row) => ({
+            ...row,
+            category_id: Number(row.category_id),
+            parent_id: Number(row.parent_id),
+            product_count: Number(row.product_count ?? 0),
+            subcategory_count: Number(row.subcategory_count ?? 0),
+        }));
+
+        const formatted = buildCategoryHierarchy(normalized);
         return NextResponse.json(formatted, { status: 200 });
     } catch (error) {
         console.error("Failed to list categories", error);

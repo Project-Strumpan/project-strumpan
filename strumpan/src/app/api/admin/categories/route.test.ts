@@ -34,8 +34,8 @@ describe("GET /api/admin/categories", () => {
 
     it("returns categories with formatted hierarchy display names and item counts", async () => {
         const rows = [
-            { category_id: 1, parent_id: 1, category_name: "Socks", category_description: "All socks", product_count: 5, subcategory_count: 1 },
-            { category_id: 2, parent_id: 1, category_name: "Wool Socks", category_description: "Warm socks", product_count: 2, subcategory_count: 0 },
+            { category_id: 1, parent_id: 1, category_name: "Socks", category_description: "All socks", product_count: BigInt(5), subcategory_count: BigInt(1) },
+            { category_id: 2, parent_id: 1, category_name: "Wool Socks", category_description: "Warm socks", product_count: BigInt(2), subcategory_count: BigInt(0) },
         ];
         const release = vi.fn();
         getConnection.mockResolvedValue({ query: vi.fn(async () => rows), release });

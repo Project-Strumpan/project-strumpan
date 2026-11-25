@@ -101,11 +101,15 @@ export default function AdminOrdersPage() {
     const [statusFilter, setStatusFilter] = useState("all");
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
+    const [searchQuery, setSearchQuery] = useState("");
 
     // Selected order details modal
     const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
     const [orderDetail, setOrderDetail] = useState<OrderDetail | null>(null);
     const [loadingDetail, setLoadingDetail] = useState(false);
+    const [newStatus, setNewStatus] = useState("");
+    const [updatingStatus, setUpdatingStatus] = useState(false);
+    const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
     // Summary tab state (24h or 7d)
     const [summary, setSummary] = useState<SummaryResponse | null>(null);
@@ -121,6 +125,7 @@ export default function AdminOrdersPage() {
             if (statusFilter && statusFilter !== "all") params.set("status", statusFilter);
             if (startDate) params.set("startDate", startDate);
             if (endDate) params.set("endDate", endDate);
+            if (searchQuery.trim()) params.set("search", searchQuery.trim());
 
             const res = await fetch(`/api/admin/orders?${params.toString()}`);
             const data = await res.json();
@@ -138,15 +143,43 @@ export default function AdminOrdersPage() {
         setSelectedOrderId(id);
         setLoadingDetail(true);
         setOrderDetail(null);
+        setStatusMessage(null);
         try {
             const res = await fetch(`/api/admin/orders/${id}`);
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || "Failed to load order details");
             setOrderDetail(data);
+            setNewStatus(data.order_status);
         } catch (e: any) {
             alert(e.message || "Could not load order details");
         } finally {
             setLoadingDetail(false);
+        }
+    }
+
+    async function handleUpdateStatus() {
+        if (!orderDetail || !newStatus) return;
+        setUpdatingStatus(true);
+        setStatusMessage(null);
+        try {
+            const res = await fetch(`/api/admin/orders/${orderDetail.order_id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ order_status: newStatus }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || "Failed to update order status");
+            setOrderDetail({ ...orderDetail, order_status: data.order_status });
+            setStatusMessage(
+                data.stock_restored
+                    ? "Order status updated to cancelled and inventory restored."
+                    : `Order status updated to ${data.order_status}.`
+            );
+            void loadOrders();
+        } catch (e: any) {
+            setStatusMessage(e.message || "Could not update order status");
+        } finally {
+            setUpdatingStatus(false);
         }
     }
 
@@ -172,7 +205,7 @@ export default function AdminOrdersPage() {
         } else {
             void loadSummary(tab);
         }
-    }, [tab, statusFilter, startDate, endDate]);
+    }, [tab, statusFilter, startDate, endDate, searchQuery]);
 
     return (
         <main className="space-y-6">
@@ -229,7 +262,20 @@ export default function AdminOrdersPage() {
             {tab === "orders" && (
                 <section className="space-y-4">
                     {/* Filter controls */}
-                    <div className="grid grid-cols-1 gap-4 rounded-lg border border-gray-200 bg-white p-4 sm:grid-cols-4 shadow-sm">
+                    <div className="grid grid-cols-1 gap-4 rounded-lg border border-gray-200 bg-white p-4 sm:grid-cols-5 shadow-sm">
+                        <div>
+                            <label htmlFor="filter-search" className="block text-xs font-semibold uppercase tracking-wider text-gray-600">
+                                Search Order / Customer
+                            </label>
+                            <input
+                                id="filter-search"
+                                type="text"
+                                placeholder="Order # or customer..."
+                                className="mt-1 w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                            />
+                        </div>
                         <div>
                             <label htmlFor="filter-status" className="block text-xs font-semibold uppercase tracking-wider text-gray-600">
                                 Status
@@ -281,6 +327,7 @@ export default function AdminOrdersPage() {
                                     setStatusFilter("all");
                                     setStartDate("");
                                     setEndDate("");
+                                    setSearchQuery("");
                                 }}
                                 className="w-full rounded border border-gray-300 px-3 py-1.5 text-sm hover:bg-gray-50"
                             >
@@ -519,6 +566,50 @@ export default function AdminOrdersPage() {
                                             {orderDetail.payment?.payment_method.toUpperCase() || "N/A"}
                                         </p>
                                     </div>
+                                </div>
+
+                                {/* Order Handling / Status Update */}
+                                <div className="rounded-lg border border-indigo-100 bg-indigo-50/40 p-4">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <div>
+                                            <p className="text-xs font-semibold uppercase tracking-wider text-indigo-900">
+                                                Manage Order Status
+                                            </p>
+                                            <p className="text-xs text-gray-600">
+                                                Setting status to cancelled will automatically restore item stock to inventory.
+                                            </p>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <select
+                                                aria-label="Order status"
+                                                value={newStatus}
+                                                onChange={(e) => setNewStatus(e.target.value)}
+                                                className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm"
+                                                disabled={updatingStatus}
+                                            >
+                                                <option value="created">Created</option>
+                                                <option value="paid">Paid</option>
+                                                <option value="packed">Packed</option>
+                                                <option value="shipped">Shipped</option>
+                                                <option value="delivered">Delivered</option>
+                                                <option value="cancelled">Cancelled</option>
+                                                <option value="returned">Returned</option>
+                                            </select>
+                                            <button
+                                                type="button"
+                                                onClick={handleUpdateStatus}
+                                                disabled={updatingStatus || newStatus === orderDetail.order_status}
+                                                className="rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+                                            >
+                                                {updatingStatus ? "Updating…" : "Update status"}
+                                            </button>
+                                        </div>
+                                    </div>
+                                    {statusMessage && (
+                                        <p role="status" className="mt-2 text-xs font-medium text-emerald-700">
+                                            {statusMessage}
+                                        </p>
+                                    )}
                                 </div>
 
                                 {/* Customer & Shipping Info */}

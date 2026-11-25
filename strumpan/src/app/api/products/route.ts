@@ -35,6 +35,7 @@ export async function GET() {
                 price,
                 picture_url AS image_url
             FROM Products
+            WHERE price > 0
             ORDER BY product_id ASC
             `
         );

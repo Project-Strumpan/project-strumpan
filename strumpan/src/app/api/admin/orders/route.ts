@@ -18,6 +18,7 @@ export async function GET(request: Request) {
     const statusFilter = searchParams.get("status");
     const startDate = searchParams.get("startDate");
     const endDate = searchParams.get("endDate");
+    const search = searchParams.get("search");
 
     let connection;
     try {
@@ -57,6 +58,12 @@ export async function GET(request: Request) {
         if (endDate && endDate.trim() !== "") {
             sql += " AND o.order_date <= ?";
             params.push(new Date(endDate).toISOString().slice(0, 19).replace("T", " "));
+        }
+
+        if (search && search.trim() !== "") {
+            const term = `%${search.trim()}%`;
+            sql += " AND (CAST(o.order_id AS CHAR) LIKE ? OR c.name LIKE ? OR c.email LIKE ?)";
+            params.push(term, term, term);
         }
 
         sql += " ORDER BY o.order_date DESC, o.order_id DESC";

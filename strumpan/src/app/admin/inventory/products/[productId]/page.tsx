@@ -155,8 +155,9 @@ function VariantEditor({ productName, variant, onChanged }: {
   );
 }
 
-function PriceEditor({ productId }: { productId: number }) {
+function PriceEditor({ productId, onPriceSaved }: { productId: number; onPriceSaved?: (newPrice: number) => void }) {
   const [price, setPrice] = useState<string>("");
+  const [allowed, setAllowed] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -167,8 +168,9 @@ function PriceEditor({ productId }: { productId: number }) {
       try {
         const data = await send(`/api/admin/products/${productId}/price`, "GET");
         setPrice(String(data.price));
-      } catch (e) {
-        // If 403 Forbidden, user is not owner (inventory admin) - hide or disable gracefully
+        setAllowed(true);
+      } catch {
+        setAllowed(false);
       } finally {
         setInitialLoading(false);
       }
@@ -189,7 +191,8 @@ function PriceEditor({ productId }: { productId: number }) {
       }
       const res = await send(`/api/admin/products/${productId}/price`, "PATCH", { price: num });
       setPrice(String(res.price));
-      setMessage("Price updated successfully.");
+      setMessage(res.price > 0 ? "Price updated. Product is now published in the storefront." : "Price set to 0 SEK. Product is hidden from the storefront.");
+      onPriceSaved?.(res.price);
     } catch (e: any) {
       setError(e.message || "Failed to update price.");
     } finally {
@@ -197,7 +200,7 @@ function PriceEditor({ productId }: { productId: number }) {
     }
   }
 
-  if (initialLoading) return null;
+  if (initialLoading || !allowed) return null;
 
   return (
     <div className="rounded-lg border border-gray-300 bg-gray-50 p-4">
@@ -227,8 +230,162 @@ function PriceEditor({ productId }: { productId: number }) {
       {error && <p id="product-price-error" className="mt-1 text-sm text-red-700">{error}</p>}
       {message && <p role="status" className="mt-1 text-sm text-emerald-700">{message}</p>}
       <p className="mt-2 text-xs text-gray-500">
-        Updating this price will only affect new customer purchases. Existing placed orders will retain their original historical prices.
+        Updating this price will only affect new customer purchases. Existing placed orders will retain their original historical prices. Products with price &gt; 0 SEK are automatically published.
       </p>
+    </div>
+  );
+}
+
+type AdminCategory = {
+  category_id: number;
+  category_name: string;
+  display_name?: string;
+};
+
+function OwnerProductReviewEditor({ productId, variants, priceVersion }: {
+  productId: number;
+  variants: Variant[];
+  priceVersion: number;
+}) {
+  const [allowed, setAllowed] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [categories, setCategories] = useState<AdminCategory[]>([]);
+  const [categoryId, setCategoryId] = useState<string>("");
+  const [pictureUrl, setPictureUrl] = useState<string>("");
+  const [currentPrice, setCurrentPrice] = useState<number>(0);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      try {
+        const [details, cats] = await Promise.all([
+          send(`/api/admin/products/${productId}`, "GET"),
+          send("/api/admin/categories", "GET"),
+        ]);
+        if (!cancelled) {
+          setCategoryId(String(details.category_id));
+          setPictureUrl(details.picture_url ?? "");
+          setCurrentPrice(Number(details.price));
+          setCategories(cats);
+          setAllowed(true);
+        }
+      } catch {
+        if (!cancelled) setAllowed(false);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    void load();
+    return () => { cancelled = true; };
+  }, [productId, priceVersion]);
+
+  async function saveDetails() {
+    setError(null);
+    setMessage(null);
+    setBusy(true);
+    try {
+      await send(`/api/admin/products/${productId}`, "PATCH", {
+        category_id: Number(categoryId),
+        picture_url: pictureUrl.trim() === "" ? null : pictureUrl.trim(),
+      });
+      setMessage("Category and image saved.");
+    } catch (e: any) {
+      setError(e.message || "Failed to save product details.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (loading || !allowed) return null;
+
+  const isPublished = currentPrice > 0;
+  const hasVariants = variants.length > 0;
+  const allSizesValid = hasVariants && variants.every((v) => v.size.trim().length > 0);
+  const hasImage = pictureUrl.trim().length > 0;
+
+  return (
+    <div className="space-y-4 rounded-lg border border-indigo-200 bg-indigo-50/40 p-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3 className="text-sm font-semibold uppercase tracking-wider text-indigo-950">
+          Super Admin Review, Category &amp; Image
+        </h3>
+        <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+          isPublished ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"
+        }`}>
+          {isPublished ? "Published (Storefront active)" : "Draft (0 SEK — hidden from storefront)"}
+        </span>
+      </div>
+
+      {/* Review Checklist */}
+      <div className="rounded border border-indigo-100 bg-white p-3 text-xs">
+        <p className="mb-1.5 font-semibold text-gray-700">Review checklist before publishing:</p>
+        <ul className="grid gap-1 sm:grid-cols-2 text-gray-700">
+          <li>{categoryId ? "✓" : "○"} Category assigned</li>
+          <li>{hasVariants ? `✓ ${variants.length} variant(s) created` : "○ Missing variants"}</li>
+          <li>{allSizesValid ? "✓ Variant sizes verified" : "○ Check variant sizes"}</li>
+          <li>{isPublished ? `✓ Price set (${currentPrice.toFixed(2)} SEK)` : "○ Price is 0 SEK (set price > 0 to publish)"}</li>
+          <li>{hasImage ? "✓ Product image URL set" : "○ No product image URL yet"}</li>
+        </ul>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label htmlFor="admin-category" className="mb-1 block text-sm font-medium text-gray-800">
+            Category
+          </label>
+          <select
+            id="admin-category"
+            className={inputClass(false)}
+            value={categoryId}
+            onChange={(e) => setCategoryId(e.target.value)}
+            disabled={busy}
+          >
+            {categories.map((cat) => (
+              <option key={cat.category_id} value={cat.category_id}>
+                {cat.display_name || cat.category_name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label htmlFor="admin-picture-url" className="mb-1 block text-sm font-medium text-gray-800">
+            Product Image URL
+          </label>
+          <input
+            id="admin-picture-url"
+            type="text"
+            placeholder="/images/sock.jpg or https://..."
+            className={inputClass(false)}
+            value={pictureUrl}
+            onChange={(e) => setPictureUrl(e.target.value)}
+            disabled={busy}
+          />
+        </div>
+      </div>
+
+      {hasImage && (
+        <div className="flex items-center gap-3 rounded border border-gray-200 bg-white p-2">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={pictureUrl}
+            alt="Product preview"
+            className="h-16 w-16 rounded object-cover border border-gray-200"
+          />
+          <span className="text-xs text-gray-500 break-all">{pictureUrl}</span>
+        </div>
+      )}
+
+      <div className="flex items-center gap-3">
+        <button type="button" className={btn} onClick={saveDetails} disabled={busy}>
+          {busy ? "Saving…" : "Save category & image"}
+        </button>
+        {error && <p className="text-sm text-red-700">{error}</p>}
+        {message && <p role="status" className="text-sm text-emerald-700">{message}</p>}
+      </div>
     </div>
   );
 }
@@ -243,6 +400,7 @@ export default function EditProductPage({ params }: { params: Promise<{ productI
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const [priceVersion, setPriceVersion] = useState(0);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -330,7 +488,13 @@ export default function EditProductPage({ params }: { params: Promise<{ productI
         {nameError && <p id="product-name-error" className="mt-1 text-sm text-red-700">{nameError}</p>}
       </div>
 
-      <PriceEditor productId={product.product_id} />
+      <PriceEditor productId={product.product_id} onPriceSaved={() => setPriceVersion((v) => v + 1)} />
+
+      <OwnerProductReviewEditor
+        productId={product.product_id}
+        variants={product.variants}
+        priceVersion={priceVersion}
+      />
 
       <section aria-labelledby="variants-heading" className="space-y-4">
         <h2 id="variants-heading" className="text-xl font-semibold">Variants</h2>

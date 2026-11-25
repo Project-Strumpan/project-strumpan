@@ -47,8 +47,15 @@ describe("GET /api/admin/orders/summary", () => {
             total_sales: "495.00",
         };
 
+        const countryRows = [
+            { country: "Sweden", orders_count: "3", total_sales: "495.00" },
+        ];
+
         const query = vi.fn(async (sql: string) => {
             if (sql.includes("CURRENT_TIMESTAMP - INTERVAL 24 HOUR")) {
+                if (sql.includes("LEFT JOIN Addresses")) {
+                    return countryRows;
+                }
                 if (sql.includes("COUNT(DISTINCT o.order_id) AS total_orders")) {
                     return [overallRow];
                 }
@@ -71,6 +78,9 @@ describe("GET /api/admin/orders/summary", () => {
         expect(data.total_orders).toBe(3);
         expect(data.total_items_sold).toBe(5);
         expect(data.total_sales).toBe(495);
+        expect(data.top_product.product_name).toBe("Wool Socks");
+        expect(data.top_country.country).toBe("Sweden");
+        expect(data.top_countries).toHaveLength(1);
         expect(data.items).toHaveLength(1);
         expect(data.items[0].product_name).toBe("Wool Socks");
         expect(release).toHaveBeenCalledOnce();

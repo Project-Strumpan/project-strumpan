@@ -7,7 +7,17 @@
 import { NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import { authorizeOwnerAccess } from "@/lib/inventory/access";
-import { parseId } from "@/lib/inventory/helpers";
+import { fieldError, parseId, writeAudit } from "@/lib/inventory/helpers";
+
+const VALID_ORDER_STATUSES = [
+    "created",
+    "paid",
+    "packed",
+    "shipped",
+    "delivered",
+    "cancelled",
+    "returned",
+] as const;
 
 type Context = { params: Promise<{ orderId: string }> };
 
@@ -140,6 +150,98 @@ export async function GET(_request: Request, { params }: Context) {
     } catch (error) {
         console.error("Failed to fetch order details", error);
         return NextResponse.json({ error: "Failed to fetch order details" }, { status: 500 });
+    } finally {
+        connection?.release();
+    }
+}
+
+export async function PATCH(request: Request, { params }: Context) {
+    const access = await authorizeOwnerAccess();
+    if (!access.ok) {
+        return NextResponse.json({ error: access.error }, { status: access.status });
+    }
+
+    const orderId = parseId((await params).orderId);
+    if (!orderId) {
+        return NextResponse.json({ error: "Invalid order ID" }, { status: 400 });
+    }
+
+    let body: Record<string, unknown>;
+    try {
+        body = (await request.json()) as Record<string, unknown>;
+    } catch {
+        return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+    }
+
+    const nextStatus = typeof body?.order_status === "string" ? body.order_status.trim() : "";
+    if (!VALID_ORDER_STATUSES.includes(nextStatus as any)) {
+        return fieldError("order_status", "Invalid order status");
+    }
+
+    let connection;
+    try {
+        connection = await pool.getConnection();
+        await connection.beginTransaction();
+
+        const [existing] = await connection.query<Array<{ order_id: number; order_status: string }>>(
+            "SELECT order_id, order_status FROM Orders WHERE order_id = ? FOR UPDATE",
+            [orderId]
+        );
+        if (!existing) {
+            await connection.rollback();
+            return NextResponse.json({ error: "Order not found" }, { status: 404 });
+        }
+
+        const previousStatus = existing.order_status;
+        if (previousStatus === nextStatus) {
+            await connection.commit();
+            return NextResponse.json({ order_id: orderId, order_status: nextStatus }, { status: 200 });
+        }
+
+        await connection.query(
+            "UPDATE Orders SET order_status = ? WHERE order_id = ?",
+            [nextStatus, orderId]
+        );
+
+        let stockRestored = false;
+        if (nextStatus === "cancelled" && previousStatus !== "cancelled" && previousStatus !== "returned") {
+            const items = await connection.query<Array<{ variant_id: number; quantity: number }>>(
+                "SELECT variant_id, quantity FROM Order_items WHERE order_id = ?",
+                [orderId]
+            );
+            for (const item of items) {
+                await connection.query(
+                    "UPDATE Inventory SET quantity = quantity + ? WHERE variant_id = ?",
+                    [Number(item.quantity), Number(item.variant_id)]
+                );
+            }
+            stockRestored = items.length > 0;
+        }
+
+        await writeAudit(
+            connection,
+            access.adminId,
+            "update_order_status",
+            "Orders",
+            orderId,
+            {
+                before: { order_status: previousStatus },
+                after: { order_status: nextStatus },
+                stock_restored: stockRestored,
+            }
+        );
+
+        await connection.commit();
+        return NextResponse.json({
+            order_id: orderId,
+            order_status: nextStatus,
+            previous_status: previousStatus,
+            stock_restored: stockRestored,
+        }, { status: 200 });
+    } catch (error) {
+        try { await connection?.rollback(); } catch { /* ignore */ }
+        console.error("Failed to update order status", error);
+        return NextResponse.json({ error: "Failed to update order status" }, { status: 500 });
     } finally {
         connection?.release();
     }

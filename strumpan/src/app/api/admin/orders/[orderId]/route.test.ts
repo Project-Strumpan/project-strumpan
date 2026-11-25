@@ -1,14 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { getConnection, authorizeOwnerAccess } = vi.hoisted(() => ({
+const { getConnection, authorizeOwnerAccess, writeAudit } = vi.hoisted(() => ({
     getConnection: vi.fn(),
     authorizeOwnerAccess: vi.fn(),
+    writeAudit: vi.fn(),
 }));
 
 vi.mock("@/lib/db", () => ({ pool: { getConnection } }));
 vi.mock("@/lib/inventory/access", () => ({ authorizeOwnerAccess }));
+vi.mock("@/lib/inventory/helpers", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("@/lib/inventory/helpers")>();
+    return { ...actual, writeAudit };
+});
 
-import { GET } from "./route";
+import { GET, PATCH } from "./route";
 
 describe("GET /api/admin/orders/[orderId]", () => {
     beforeEach(() => {
@@ -101,6 +106,59 @@ describe("GET /api/admin/orders/[orderId]", () => {
         expect(data.items).toHaveLength(1);
         expect(data.items[0].product_name).toBe("Cozy Socks");
         expect(data.items[0].line_total).toBe(199);
+        expect(release).toHaveBeenCalledOnce();
+    });
+});
+
+describe("PATCH /api/admin/orders/[orderId]", () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        authorizeOwnerAccess.mockResolvedValue({ ok: true, adminId: 1 });
+    });
+
+    it("rejects invalid order_status with 400", async () => {
+        const req = new Request("http://localhost/api/admin/orders/101", {
+            method: "PATCH",
+            body: JSON.stringify({ order_status: "invalid_status" }),
+        });
+        const res = await PATCH(req, { params: Promise.resolve({ orderId: "101" }) });
+        expect(res.status).toBe(400);
+    });
+
+    it("updates status to cancelled, restores stock, and writes audit log", async () => {
+        const beginTransaction = vi.fn();
+        const commit = vi.fn();
+        const rollback = vi.fn();
+        const release = vi.fn();
+        const query = vi.fn(async (sql: string) => {
+            if (sql.includes("FOR UPDATE")) return [{ order_id: 101, order_status: "paid" }];
+            if (sql.includes("FROM Order_items")) return [{ variant_id: 10, quantity: 2 }];
+            return { affectedRows: 1 };
+        });
+        getConnection.mockResolvedValue({ query, beginTransaction, commit, rollback, release });
+
+        const req = new Request("http://localhost/api/admin/orders/101", {
+            method: "PATCH",
+            body: JSON.stringify({ order_status: "cancelled" }),
+        });
+        const res = await PATCH(req, { params: Promise.resolve({ orderId: "101" }) });
+        expect(res.status).toBe(200);
+        const data = await res.json();
+        expect(data.order_status).toBe("cancelled");
+        expect(data.stock_restored).toBe(true);
+        expect(writeAudit).toHaveBeenCalledWith(
+            expect.anything(),
+            1,
+            "update_order_status",
+            "Orders",
+            101,
+            expect.objectContaining({
+                before: { order_status: "paid" },
+                after: { order_status: "cancelled" },
+                stock_restored: true,
+            })
+        );
+        expect(commit).toHaveBeenCalledOnce();
         expect(release).toHaveBeenCalledOnce();
     });
 });
