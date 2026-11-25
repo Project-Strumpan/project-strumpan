@@ -11,10 +11,11 @@ import { formatSEK } from "@/lib/pricing";
 interface StripePaymentFormProps {
   totalGross: number;
   onPaymentSuccess?: () => void;
+  onBeforeConfirm?: () => boolean;
   disabled?: boolean;
 }
 
-export function StripePaymentForm({ totalGross, disabled }: StripePaymentFormProps) {
+export function StripePaymentForm({ totalGross, onBeforeConfirm, disabled }: StripePaymentFormProps) {
   const stripe = useStripe();
   const elements = useElements();
 
@@ -23,6 +24,11 @@ export function StripePaymentForm({ totalGross, disabled }: StripePaymentFormPro
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+
+    if (onBeforeConfirm && !onBeforeConfirm()) {
+      setErrorMessage("Fyll i alla obligatoriska leveransuppgifter ovan innan du betalar.");
+      return;
+    }
 
     if (!stripe || !elements) {
       // Stripe har inte laddats ännu

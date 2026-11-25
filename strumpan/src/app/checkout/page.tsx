@@ -29,6 +29,33 @@ export default function CheckoutPage() {
     city: "",
     phone: "",
   });
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof typeof customerInfo, string>>>({});
+
+  function validateCustomerInfo(): boolean {
+    const errors: Partial<Record<keyof typeof customerInfo, string>> = {};
+    if (!customerInfo.name.trim()) errors.name = "Fullständigt namn är obligatoriskt";
+    if (!customerInfo.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerInfo.email.trim())) {
+      errors.email = "En giltig e-postadress är obligatorisk";
+    }
+    if (!customerInfo.phone.trim()) errors.phone = "Telefonnummer är obligatoriskt";
+    if (!customerInfo.street.trim()) errors.street = "Gatuadress är obligatorisk";
+    if (!customerInfo.postalCode.trim()) errors.postalCode = "Postnummer är obligatoriskt";
+    if (!customerInfo.city.trim()) errors.city = "Ort är obligatorisk";
+
+    setFieldErrors(errors);
+    if (Object.keys(errors).length > 0) {
+      document.getElementById("checkout-customer-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      return false;
+    }
+    return true;
+  }
+
+  function updateField(field: keyof typeof customerInfo, value: string) {
+    setCustomerInfo((prev) => ({ ...prev, [field]: value }));
+    if (fieldErrors[field]) {
+      setFieldErrors((prev) => ({ ...prev, [field]: undefined }));
+    }
+  }
 
   useEffect(() => {
     try {
@@ -188,108 +215,121 @@ export default function CheckoutPage() {
           {/* Vänster kolumn: Kunduppgifter, leverans & Stripe */}
           <div className="space-y-6 lg:col-span-7">
             {/* 1. Kund- & Leveransuppgifter */}
-            <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                1. Leveransadress
-              </h2>
+            <section id="checkout-customer-section" className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-gray-900">
+                  1. Leveransadress
+                </h2>
+                <span className="text-xs text-gray-500">* Obligatoriska fält</span>
+              </div>
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="sm:col-span-2">
                   <label className="block text-xs font-medium text-gray-700">
-                    Fullständigt namn
+                    Fullständigt namn <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
                     required
                     placeholder="För- och efternamn"
                     value={customerInfo.name}
-                    onChange={(e) =>
-                      setCustomerInfo({ ...customerInfo, name: e.target.value })
-                    }
-                    className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
+                    onChange={(e) => updateField("name", e.target.value)}
+                    aria-invalid={Boolean(fieldErrors.name)}
+                    className={`mt-1 block w-full rounded-lg border px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900 ${
+                      fieldErrors.name ? "border-red-500 bg-red-50/30" : "border-gray-300"
+                    }`}
                   />
+                  {fieldErrors.name && <p className="mt-1 text-xs text-red-600">{fieldErrors.name}</p>}
                 </div>
 
                 <div>
                   <label className="block text-xs font-medium text-gray-700">
-                    E-postadress
+                    E-postadress <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="email"
                     required
                     placeholder="namn@exempel.se"
                     value={customerInfo.email}
-                    onChange={(e) =>
-                      setCustomerInfo({ ...customerInfo, email: e.target.value })
-                    }
-                    className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
+                    onChange={(e) => updateField("email", e.target.value)}
+                    aria-invalid={Boolean(fieldErrors.email)}
+                    className={`mt-1 block w-full rounded-lg border px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900 ${
+                      fieldErrors.email ? "border-red-500 bg-red-50/30" : "border-gray-300"
+                    }`}
                   />
+                  {fieldErrors.email && <p className="mt-1 text-xs text-red-600">{fieldErrors.email}</p>}
                 </div>
 
                 <div>
                   <label className="block text-xs font-medium text-gray-700">
-                    Telefonnummer
+                    Telefonnummer <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="tel"
+                    required
                     placeholder="070-123 45 67"
                     value={customerInfo.phone}
-                    onChange={(e) =>
-                      setCustomerInfo({ ...customerInfo, phone: e.target.value })
-                    }
-                    className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
+                    onChange={(e) => updateField("phone", e.target.value)}
+                    aria-invalid={Boolean(fieldErrors.phone)}
+                    className={`mt-1 block w-full rounded-lg border px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900 ${
+                      fieldErrors.phone ? "border-red-500 bg-red-50/30" : "border-gray-300"
+                    }`}
                   />
+                  {fieldErrors.phone && <p className="mt-1 text-xs text-red-600">{fieldErrors.phone}</p>}
                 </div>
 
                 <div className="sm:col-span-2">
                   <label className="block text-xs font-medium text-gray-700">
-                    Gatuadress
+                    Gatuadress <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
                     required
                     placeholder="Gata och gatunummer"
                     value={customerInfo.street}
-                    onChange={(e) =>
-                      setCustomerInfo({ ...customerInfo, street: e.target.value })
-                    }
-                    className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
+                    onChange={(e) => updateField("street", e.target.value)}
+                    aria-invalid={Boolean(fieldErrors.street)}
+                    className={`mt-1 block w-full rounded-lg border px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900 ${
+                      fieldErrors.street ? "border-red-500 bg-red-50/30" : "border-gray-300"
+                    }`}
                   />
+                  {fieldErrors.street && <p className="mt-1 text-xs text-red-600">{fieldErrors.street}</p>}
                 </div>
 
                 <div>
                   <label className="block text-xs font-medium text-gray-700">
-                    Postnummer
+                    Postnummer <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
                     required
                     placeholder="123 45"
                     value={customerInfo.postalCode}
-                    onChange={(e) =>
-                      setCustomerInfo({
-                        ...customerInfo,
-                        postalCode: e.target.value,
-                      })
-                    }
-                    className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
+                    onChange={(e) => updateField("postalCode", e.target.value)}
+                    aria-invalid={Boolean(fieldErrors.postalCode)}
+                    className={`mt-1 block w-full rounded-lg border px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900 ${
+                      fieldErrors.postalCode ? "border-red-500 bg-red-50/30" : "border-gray-300"
+                    }`}
                   />
+                  {fieldErrors.postalCode && <p className="mt-1 text-xs text-red-600">{fieldErrors.postalCode}</p>}
                 </div>
 
                 <div>
                   <label className="block text-xs font-medium text-gray-700">
-                    Ort
+                    Ort <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
                     required
                     placeholder="Stad / Ort"
                     value={customerInfo.city}
-                    onChange={(e) =>
-                      setCustomerInfo({ ...customerInfo, city: e.target.value })
-                    }
-                    className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
+                    onChange={(e) => updateField("city", e.target.value)}
+                    aria-invalid={Boolean(fieldErrors.city)}
+                    className={`mt-1 block w-full rounded-lg border px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900 ${
+                      fieldErrors.city ? "border-red-500 bg-red-50/30" : "border-gray-300"
+                    }`}
                   />
+                  {fieldErrors.city && <p className="mt-1 text-xs text-red-600">{fieldErrors.city}</p>}
                 </div>
 
                 {/* Landväljare - Förberedd för EU-moms */}
@@ -394,6 +434,7 @@ export default function CheckoutPage() {
                 >
                   <StripePaymentForm
                     totalGross={pricing.totalGross}
+                    onBeforeConfirm={validateCustomerInfo}
                     disabled={items.length === 0}
                   />
                 </Elements>
