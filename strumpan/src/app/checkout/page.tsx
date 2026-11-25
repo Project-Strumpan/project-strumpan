@@ -33,9 +33,20 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     try {
-      sessionStorage.setItem("strumpan_checkout_customer", JSON.stringify(customerInfo));
+      sessionStorage.setItem(
+        "strumpan_checkout_customer",
+        JSON.stringify({ ...customerInfo, country: selectedCountry })
+      );
     } catch {}
-  }, [customerInfo]);
+  }, [customerInfo, selectedCountry]);
+
+  useEffect(() => {
+    if (!isMounted || items.length === 0) return;
+    try {
+      sessionStorage.setItem("strumpan_checkout_items", JSON.stringify(items));
+      sessionStorage.setItem("strumpan_checkout_pricing", JSON.stringify(pricing));
+    } catch {}
+  }, [isMounted, items, pricing]);
 
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [stripeError, setStripeError] = useState<string | null>(null);

@@ -18,6 +18,7 @@ export default function ProductPage({ params }: ProductPageProps) {
   const productId = Number(resolvedParams.id);
 
   const [product, setProduct] = useState<ProductWithVariants | null>(null);
+  const [selectedVariantId, setSelectedVariantId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
@@ -25,6 +26,11 @@ export default function ProductPage({ params }: ProductPageProps) {
     getProduct(productId)
       .then((data) => {
         setProduct(data);
+        const firstInStock = data.variants?.find((v) => (v.available_quantity ?? 0) > 0);
+        const initialVariant = firstInStock ?? data.variants?.[0];
+        if (initialVariant) {
+          setSelectedVariantId(initialVariant.variant_id);
+        }
       })
       .catch(() => {
         setError(true);
@@ -67,6 +73,12 @@ export default function ProductPage({ params }: ProductPageProps) {
     0
   ) ?? 0;
 
+  const selectedVariant =
+    product.variants?.find((v) => v.variant_id === selectedVariantId) ??
+    product.variants?.[0] ??
+    null;
+  const selectedStock = selectedVariant ? (selectedVariant.available_quantity ?? 0) : totalStock;
+
   return (
     <div className="w-full max-w-4xl mx-auto px-4 py-8">
       <Link
@@ -107,14 +119,23 @@ export default function ProductPage({ params }: ProductPageProps) {
               </span>
               <div className="flex flex-wrap gap-2">
                 {product.variants?.length ? (
-                  product.variants.map((variant) => (
-                    <span
-                      key={variant.variant_id}
-                      className="px-2.5 py-1 text-xs rounded-md bg-gray-100 dark:bg-zinc-800 text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-zinc-700"
-                    >
-                      {variant.size} {variant.color ? `(${variant.color})` : ""} ({variant.available_quantity} st)
-                    </span>
-                  ))
+                  product.variants.map((variant) => {
+                    const isSelected = selectedVariant?.variant_id === variant.variant_id;
+                    return (
+                      <button
+                        type="button"
+                        key={variant.variant_id}
+                        onClick={() => setSelectedVariantId(variant.variant_id)}
+                        className={`px-2.5 py-1 text-xs rounded-md border transition-colors ${
+                          isSelected
+                            ? "bg-indigo-600 text-white border-indigo-600 font-semibold"
+                            : "bg-gray-100 dark:bg-zinc-800 text-gray-800 dark:text-gray-200 border-gray-200 dark:border-zinc-700 hover:border-indigo-400"
+                        }`}
+                      >
+                        {variant.size} {variant.color ? `(${variant.color})` : ""} ({variant.available_quantity} st)
+                      </button>
+                    );
+                  })
                 ) : (
                   <span className="text-gray-600 dark:text-gray-400">Inga storlekar tillgängliga</span>
                 )}
@@ -141,14 +162,17 @@ export default function ProductPage({ params }: ProductPageProps) {
           <div className="mt-4">
             <AddToCart
               product={{
-                id: String(product.product_id),
+                id: String(selectedVariant?.variant_id ?? product.product_id),
+                variantId: selectedVariant?.variant_id,
                 title: product.name,
                 description: product.description ?? "",
                 price: product.price,
+                size: selectedVariant?.size,
+                color: selectedVariant?.color ?? undefined,
                 picture_url: product.image_url,
-                availableStock: totalStock,
+                availableStock: selectedStock,
               }}
-              available={totalStock > 0}
+              available={selectedStock > 0}
             />
           </div>
         </div>

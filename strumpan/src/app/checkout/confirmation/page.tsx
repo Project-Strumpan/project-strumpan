@@ -12,8 +12,8 @@ function ConfirmationContent() {
   const redirectStatus = searchParams.get("redirect_status");
 
   const { items, pricing, clearCart } = useCart();
-  const [orderItemsSnapshot] = useState(items);
-  const [orderPricingSnapshot] = useState(pricing);
+  const [orderItemsSnapshot, setOrderItemsSnapshot] = useState(items);
+  const [orderPricingSnapshot, setOrderPricingSnapshot] = useState(pricing);
   const [createdOrder, setCreatedOrder] = useState<{
     order_id: number;
     order_status: string;
@@ -26,6 +26,42 @@ function ConfirmationContent() {
     // Om betalningen lyckades och vi inte redan har skickat in för detta PaymentIntent
     if (redirectStatus === "succeeded" && paymentIntentId && !hasSubmittedRef.current) {
       hasSubmittedRef.current = true;
+
+      // Hämta sparad varukorg från sessionStorage (eller localStorage) innan varukorgen töms
+      let resolvedItems = items;
+      let resolvedPricing = pricing;
+      try {
+        const savedItems = sessionStorage.getItem("strumpan_checkout_items");
+        if (savedItems) {
+          const parsedItems = JSON.parse(savedItems);
+          if (Array.isArray(parsedItems) && parsedItems.length > 0) {
+            resolvedItems = parsedItems;
+          }
+        } else if (resolvedItems.length === 0) {
+          const lsCart = localStorage.getItem("strumpan_cart");
+          if (lsCart) {
+            const parsedLs = JSON.parse(lsCart);
+            if (Array.isArray(parsedLs) && parsedLs.length > 0) {
+              resolvedItems = parsedLs;
+            }
+          }
+        }
+
+        const savedPricing = sessionStorage.getItem("strumpan_checkout_pricing");
+        if (savedPricing) {
+          const parsedPricing = JSON.parse(savedPricing);
+          if (parsedPricing && typeof parsedPricing.totalGross === "number") {
+            resolvedPricing = parsedPricing;
+          }
+        }
+      } catch {}
+
+      if (resolvedItems.length > 0) {
+        setOrderItemsSnapshot(resolvedItems);
+      }
+      if (resolvedPricing && resolvedPricing.totalGross > 0) {
+        setOrderPricingSnapshot(resolvedPricing);
+      }
 
       // Töm varukorgen en gång
       clearCart();
@@ -62,8 +98,14 @@ function ConfirmationContent() {
           if (parsed.street) addressData.street = parsed.street;
           if (parsed.postalCode) addressData.postalCode = parsed.postalCode;
           if (parsed.city) addressData.city = parsed.city;
+          if (parsed.country) addressData.country = parsed.country;
         }
       } catch {}
+
+      const computedTotal = resolvedItems.reduce(
+        (sum, item) => sum + Number(item.price) * Number(item.quantity),
+        0
+      );
 
       fetch("/api/orders/from-payment", {
         method: "POST",
@@ -75,14 +117,14 @@ function ConfirmationContent() {
           customer: customerData,
           address: addressData,
           items:
-            orderItemsSnapshot.length > 0
-              ? orderItemsSnapshot.map((item) => ({
-                  variantId: Number(item.id) || 1,
+            resolvedItems.length > 0
+              ? resolvedItems.map((item) => ({
+                  variantId: Number(item.variantId ?? item.id) || 1,
                   quantity: item.quantity,
                   unitPrice: item.price,
                 }))
               : [{ variantId: 1, quantity: 1, unitPrice: 89 }],
-          totalCost: orderPricingSnapshot.totalGross || 89,
+          totalCost: resolvedPricing.totalGross || computedTotal || 89,
         }),
       })
         .then((res) => res.json())

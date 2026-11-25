@@ -5,6 +5,7 @@ import { OrderItemInput, calculateOrderPricing, PricingSummary } from "@/lib/pri
 
 export interface CartItem extends OrderItemInput {
   id: string;
+  variantId?: number;
   availableStock: number;
 }
 export type CartItemInput = Omit<CartItem, "quantity"> & {
