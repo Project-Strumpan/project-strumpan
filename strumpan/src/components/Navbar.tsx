@@ -25,14 +25,16 @@ export default async function Navbar() {
                 <Image
                     className="hidden w-auto h-auto dark:block"
                     src={DarkLogo}
+                    priority={true}
                     alt="AEP"
-                    width={100}
+                    width={60}
                 />
                 <Image
-                    className="mb-4 block w-auto h-auto dark:hidden"
+                    className="mb-1 block w-auto h-auto dark:hidden"
                     src={LightLogo}
+                    priority={true}
                     alt="AEP"
-                    width={100}
+                    width={60}
                 />
             </Link>
             <CartButton fill="var(--blackOrWhite)"/>

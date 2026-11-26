@@ -5,7 +5,10 @@
   --foreground: #EDE6DD;
   --surface: #EDE6DD;
   --blackOrWhite: #111;
-  --navbar: 
+  --button: #3A2C21;
+}
+button:hover {
+  --button: #594333;
 }
 
 @theme inline {
@@ -19,10 +22,11 @@
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #181a1b;
-    --foreground:#181a1b;
+    --foreground:#1f2020;
     --foreground2:#1d1f20;
-    --text-color: #dd562a;
-    --text-color2: #f0bda0;
+    --text-color: #d6d4d1;
+    --text-color-headings: #dd562a;
+    --text-color-subheadings: #f0bda0;
     --text-footer1: #d6d4d1;
     --navbar: #252524;
     --blackOrWhite: #ffffffbe;

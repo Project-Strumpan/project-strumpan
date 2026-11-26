@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -20,11 +21,13 @@ export default function ProductPage({ params }: ProductPageProps) {
   const [product, setProduct] = useState<ProductWithVariants | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   useEffect(() => {
     getProduct(productId)
       .then((data) => {
         setProduct(data);
+        setImageError(false);
       })
       .catch(() => {
         setError(true);
@@ -36,7 +39,7 @@ export default function ProductPage({ params }: ProductPageProps) {
 
   if (loading) {
     return (
-      <div className="w-full max-w-4xl mx-auto px-4 py-16 text-center text-gray-500">
+      <div className="min-h-screen bg-[#e9dfd2] flex items-center justify-center font-serif text-[#38291f]">
         Laddar produkt...
       </div>
     );
@@ -44,16 +47,16 @@ export default function ProductPage({ params }: ProductPageProps) {
 
   if (error || !product) {
     return (
-      <div className="w-full max-w-4xl mx-auto px-4 py-16 text-center">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+      <div className="min-h-screen bg-[#e9dfd2] flex flex-col items-center justify-center px-6 text-center">
+        <h1 className="text-3xl font-serif text-[#38291f] mb-3">
           Produkten kunde inte hittas
         </h1>
-        <p className="text-gray-600 dark:text-gray-400 mb-6">
+        <p className="text-[#74685d] mb-6">
           Produkten du söker existerar inte eller så uppstod ett fel.
         </p>
         <Link
           href="/catalog"
-          className="inline-flex items-center text-sm font-medium text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 underline"
+          className="underline text-[#38291f]"
         >
           ← Tillbaka till produktlistan
         </Link>
@@ -61,98 +64,140 @@ export default function ProductPage({ params }: ProductPageProps) {
     );
   }
 
-  // Beräkna totalt lager säkert
-  const totalStock = product.variants?.reduce(
-    (acc, v) => acc + (v.available_quantity ?? 0),
-    0
-  ) ?? 0;
+  // Calculate total stock
+  const totalStock =
+    product.variants?.reduce(
+      (acc, v) => acc + (v.available_quantity ?? 0),
+      0
+    ) ?? 0;
 
   return (
-    <div className="w-full max-w-4xl mx-auto px-4 py-8">
-      <Link
-        href="/catalog"
-        className="inline-flex items-center text-sm font-medium text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 mb-6 transition-colors"
-      >
-        ← Tillbaka till produktlistan
-      </Link>
+    <main className="min-h-screen bg-background px-4 py-8 sm:px-8 sm:py-12">
+      <div className="max-w-337.5 mx-auto">
+        <Link
+          href="/catalog"
+          className="inline-block mb-6 text-sm text-[#74685d] hover:text-[#38291f] transition-colors"
+        >
+          ← Tillbaka till produktlistan
+        </Link>
 
-      <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-6 sm:p-8 shadow-sm">
-        <div className="flex flex-col gap-6">
-          <div>
-            <span className="inline-block px-2.5 py-1 text-xs font-semibold uppercase tracking-wider text-indigo-700 bg-indigo-50 dark:bg-indigo-950/50 dark:text-indigo-300 rounded-md mb-3">
-              Produkt-ID: #{product.product_id}
-            </span>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              {product.name}
-            </h1>
-            <p className="mt-3 text-base text-gray-600 dark:text-gray-300 leading-relaxed">
-              {product.description || "Ingen beskrivning tillgänglig."}
-            </p>
-          </div>
+        {/* Product container */}
+        <div className="bg-foreground min-h-162.5 p-6 sm:p-10 lg:p-14">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16">
 
-          <div className="border-t border-b border-gray-100 dark:border-zinc-800 py-4 my-2 flex items-baseline justify-between">
-            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
-              Pris
-            </span>
-            <span className="text-2xl font-bold text-gray-900 dark:text-white">
-              {product.price} kr
-            </span>
-          </div>
+            {/* Product images */}
+            <div className="flex flex-col sm:flex-row gap-4">
 
-          {/* Varianter och lagerstatus */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-            <div>
-              <span className="block font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                Tillgängliga varianter (Storlek / Färg):
-              </span>
-              <div className="flex flex-wrap gap-2">
-                {product.variants?.length ? (
-                  product.variants.map((variant) => (
-                    <span
-                      key={variant.variant_id}
-                      className="px-2.5 py-1 text-xs rounded-md bg-gray-100 dark:bg-zinc-800 text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-zinc-700"
-                    >
-                      {variant.size} {variant.color ? `(${variant.color})` : ""} ({variant.available_quantity} st)
-                    </span>
-                  ))
+              {/* Main product image */}
+              <div className="w-full sm:flex-1 h-100 sm:h-137.5 lg:h-157.5 overflow-hidden">
+
+                {product.image_url && !imageError ? (
+                  <img
+                    src={product.image_url}
+                    alt={product.name}
+                    className="w-full h-full object-cover"
+                    onError={() => setImageError(true)}
+                  />
                 ) : (
-                  <span className="text-gray-600 dark:text-gray-400">Inga storlekar tillgängliga</span>
+                  <div className="w-full h-full flex flex-col items-center justify-center text-[#8b7968]">
+                    <span className="text-5xl mb-3">◇</span>
+                    <span className="text-sm font-serif">
+                      Ingen produktbild tillgänglig
+                    </span>
+                  </div>
                 )}
+
               </div>
             </div>
 
-            <div>
-              <span className="block font-semibold text-gray-700 dark:text-gray-300">
-                Lagerstatus:
-              </span>
-              <span
-                className={`font-medium ${
-                  totalStock > 0
-                    ? "text-emerald-600 dark:text-emerald-400"
-                    : "text-rose-600 dark:text-rose-400"
-                }`}
-              >
-                {totalStock > 0 ? `${totalStock} st i lager totalt` : "Slut i lager"}
-              </span>
-            </div>
-          </div>
+            <div className="flex flex-col py-2 lg:py-0">
+              <div>
+                <span className="text-xs tracking-[0.2em] uppercase text-[#8b7968]">
+                  Produkt #{product.product_id}
+                </span>
 
-          {/* Köpknapp */}
-          <div className="mt-4">
-            <AddToCart
-              product={{
-                id: String(product.product_id),
-                title: product.name,
-                description: product.description ?? "",
-                price: product.price,
-                picture_url: product.image_url,
-                availableStock: totalStock,
-              }}
-              available={totalStock > 0}
-            />
+                <h1 className="mt-4 text-3xl sm:text-4xl lg:text-5xl font-serif font-normal leading-tight text-[#211912] dark:text-(--text-color-headings)">
+                  {product.name}
+                </h1>
+
+                <p className="mt-6 text-base sm:text-lg leading-relaxed font-serif text-[#716153] dark:text-(--text-color-subheadings)">
+                  {product.description ||
+                    "Ingen beskrivning tillgänglig."}
+                </p>
+              </div>
+
+              {/* Price */}
+              <div className="mt-12 text-center">
+                <span className="text-2xl font-serif text-[#211912] dark:text-(--text-color-headings)">
+                  {product.price} kr
+                </span>
+              </div>
+
+              {/* Spacer */}
+              <div className="flex-1 min-h-12" />
+
+              {/* Variants */}
+              <div className="border-t border-[#d7c4ae] pt-6 mt-8">
+                <div className="flex flex-row justify-between">
+
+                  <h2 className="font-serif text-xl text-[#38291f] dark:text-(--text-color-headings) pb-4">
+                    Tillgängliga varianter
+                  </h2>
+
+                    <span
+                      className={
+                        totalStock > 0
+                          ? "text-emerald-700 pb-4"
+                          : "text-red-700"
+                      }
+                    >
+                      {totalStock > 0
+                        ? `${totalStock} st i lager`
+                        : "Slut i lager"}
+                    </span>
+                </div>
+
+                {product.variants?.length ? (
+                  <div className="flex flex-wrap gap-3">
+                    {product.variants.map((variant) => (
+                      <span
+                        key={variant.variant_id}
+                        className="border border-[#b9a58f] px-4 py-2 text-sm text-[#38291f] dark:text-(--text-color-subheadings)"
+                      >
+                        {variant.size}
+                        {variant.color
+                          ? ` / ${variant.color}`
+                          : ""}
+                        {" "}({variant.available_quantity} st)
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-[#74685d]">
+                    Inga storlekar tillgängliga
+                  </p>
+                )}
+              </div>
+
+              {/* Add to cart */}
+              <div className="flex mt-8 justify-center">
+                <AddToCart
+                  product={{
+                    id: String(product.product_id),
+                    title: product.name,
+                    description: product.description ?? "",
+                    price: product.price,
+                    picture_url: product.image_url,
+                    availableStock: totalStock,
+                  }}
+                  available={totalStock > 0}
+                />
+              </div>
+
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </main>
   );
 }

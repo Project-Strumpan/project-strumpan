@@ -15,7 +15,7 @@ function App() {
               <span>Europeiskt hantverk</span>
             </div>
 
-            <h1 className="max-w-150 font-serif text-3xl font-semibold leading-[1.2] tracking-tight text-[#171411] dark:text-(--text-color) md:text-5xl">
+            <h1 className="max-w-150 font-serif text-3xl font-semibold leading-[1.2] tracking-tight text-[#171411] dark:text-(--text-color-headings) md:text-5xl">
               Lorem Ipsum Dolor Sit
               <br />
               Amet Consectetur
@@ -30,7 +30,7 @@ function App() {
             </p>
 
             <div className="mt-auto pt-12">
-              <Link href="/catalog" className="min-w-70 rounded-full bg-[#392b20] px-12 py-5 font-mono text-xs uppercase text-[#f5eee6] transition-colors duration-300 hover:bg-[#594333] md:min-w-[423px]">
+              <Link href="/catalog" className="min-w-70 rounded-full bg-(--button) hover:bg-[#594333] px-12 py-5 font-mono text-xs uppercase text-[#f5eee6] transition-colors duration-300 md:min-w-[423px]">
                 Handla kollektionen
               </Link>
             </div>

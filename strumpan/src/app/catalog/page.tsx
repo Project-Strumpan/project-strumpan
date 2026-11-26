@@ -97,10 +97,10 @@ export default function ProductCatalog() {
   return (
     <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight text-zinc-800 dark:text-(--text-color)">
+        <h1 className="text-3xl font-bold tracking-tight text-zinc-800 dark:text-(--text-color-headings)">
           Strumpor & Sortiment
         </h1>
-        <p className="mt-2 text-sm text-gray-600 dark:text-(--text-color2)">
+        <p className="mt-2 text-sm text-gray-600 dark:text-(--text-color-subheadings)">
           Utforska vårt utbud av bekväma strumpor för alla tillfällen.
         </p>
       </div>

@@ -29,7 +29,7 @@ export default function AddToCart({
   }
 
   return (
-    <div className="flex flex-col items-start gap-3">
+    <div className="flex flex-col xl:w-7/12 items-start gap-3">
       {productQuantity > 0 ? (
         <>
           {/* Quantity selector */}
@@ -89,7 +89,7 @@ export default function AddToCart({
         <button
           type="button"
           onClick={() => cart.addItem({ ...product, quantity: 1 })}
-          className="w-full sm:w-auto px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold transition-colors"
+          className="w-full px-6 py-3 rounded-3xl bg-(--button) hover:bg-[#594333] text-white text-2xl font-serif transition-colors"
         >
           Lägg i varukorg
         </button>
