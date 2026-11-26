@@ -1,9 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
 import ReactPlayer from "react-player"
+import ProductCatalog from "./catalog/page";
+import MediaManagementPage from "./media/page";
 function App() {
   return (
-    
+    <MediaManagementPage/>
+    /*
     <main className="min-h-screen bg-[#e7ded2] p-4 md:p-8">
       <section className="mx-auto min-h-170.5 w-full max-w-375 bg-[#eee7de] px-7 py-10 md:px-12 md:py-12">
         <div className="grid min-h-147.5 grid-cols-1 gap-10 md:grid-cols-[1fr_428px] md:gap-12">
@@ -41,7 +44,7 @@ function App() {
           </div>
         </div>
       </section>
-    </main>
+    </main> */
   );
 }
 

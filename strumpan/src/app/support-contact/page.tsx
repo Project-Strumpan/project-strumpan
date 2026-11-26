@@ -28,7 +28,7 @@ export default function ContactPage() {
     } catch (err) {
       setStatus("error");
       setErrorMessage(
-        err instanceof Error ? err.message : "Något gick fel när ärendet skulle skickas."
+        err instanceof Error ? err.message : "Something went wrong when trying to submit the form."
       );
     }
   }

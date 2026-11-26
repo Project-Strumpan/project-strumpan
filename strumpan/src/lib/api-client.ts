@@ -5,7 +5,10 @@ import type {
 	InventoryApiQuery,
 	InventoryApiResponse,
 } from "@/types/inventory-api";
-
+import { ProductMediaItem,
+	CreateProductMediaRequest,
+	UpdateProductMediaRequest,
+	DeleteProductMediaResponse, } from "@/types/product-media";
 
 export type ApiClientErrorKind = "network" | "http" | "invalid-response";
 
@@ -207,4 +210,86 @@ function isInventoryApiItem(value: unknown): boolean {
 		(value.last_updated === null || typeof value.last_updated === "string") &&
 		isInventoryAvailability(value.availability)
 	);
+}
+
+export async function getProductMedia(
+	productId: number
+): Promise<ProductMediaItem[]> {
+	return requestJson<ProductMediaItem[]>(
+		`/api/products/${encodeURIComponent(String(productId))}/media`,
+		isProductMediaList
+	);
+}
+
+export async function getAllProductMedia(): Promise<ProductMediaItem[]> {
+	return requestJson<ProductMediaItem[]>(
+		"/api/product-media",
+		isProductMediaList
+	);
+}
+
+export async function createProductMedia(
+	request: CreateProductMediaRequest
+): Promise<ProductMediaItem> {
+	return requestJson<ProductMediaItem>(
+		"/api/product-media",
+		isProductMediaItem,
+		{
+			method: "POST",
+			headers: { "content-type": "application/json" },
+			body: JSON.stringify(request),
+		}
+	);
+}
+
+export async function updateProductMedia(
+	mediaId: number,
+	request: UpdateProductMediaRequest
+): Promise<ProductMediaItem> {
+	return requestJson<ProductMediaItem>(
+		`/api/product-media/${encodeURIComponent(String(mediaId))}`,
+		isProductMediaItem,
+		{
+			method: "PATCH",
+			headers: { "content-type": "application/json" },
+			body: JSON.stringify(request),
+		}
+	);
+}
+
+export async function deleteProductMedia(
+	mediaId: number
+): Promise<DeleteProductMediaResponse> {
+	return requestJson<DeleteProductMediaResponse>(
+		`/api/product-media/${encodeURIComponent(String(mediaId))}`,
+		isDeleteProductMediaResponse,
+		{
+			method: "DELETE",
+		}
+	);
+}
+
+function isProductMediaList(value: unknown): value is ProductMediaItem[] {
+	return Array.isArray(value) && value.every(isProductMediaItem);
+}
+
+function isProductMediaItem(value: unknown): value is ProductMediaItem {
+	if (!isRecord(value)) return false;
+
+	return (
+		isPositiveInteger(value.media_id) &&
+		isPositiveInteger(value.product_id) &&
+		(value.variant_id === null || isPositiveInteger(value.variant_id)) &&
+		(value.media_type === "image" || value.media_type === "video") &&
+		typeof value.media_url === "string" &&
+		isNonNegativeInteger(value.sort_order)
+	);
+}
+
+function isDeleteProductMediaResponse(
+	value: unknown
+): value is DeleteProductMediaResponse {
+	if (!isRecord(value)) return false;
+
+	return value.deleted === true && isPositiveInteger(value.media_id);
 }
