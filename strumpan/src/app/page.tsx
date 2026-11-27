@@ -5,7 +5,7 @@ import ProductCatalog from "./catalog/page";
 import MediaManagementPage from "./media/page";
 function App() {
   return (
-    <MediaManagementPage/>
+    <ProductCatalog/>
     /*
     <main className="min-h-screen bg-[#e7ded2] p-4 md:p-8">
       <section className="mx-auto min-h-170.5 w-full max-w-375 bg-[#eee7de] px-7 py-10 md:px-12 md:py-12">
