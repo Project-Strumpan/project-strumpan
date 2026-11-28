@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import {
   PaymentElement,
   useStripe,
@@ -65,9 +66,16 @@ export function StripePaymentForm({ totalGross, disabled }: StripePaymentFormPro
       </div>
 
       {errorMessage && (
-        <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700 border border-red-200">
+        <div role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700 border border-red-200 space-y-2">
           <p className="font-medium">Betalningsfel</p>
           <p>{errorMessage}</p>
+          <p className="text-xs">
+            Försök igen ovan eller{" "}
+            <Link href="/cart" className="font-semibold underline hover:text-red-900">
+              gå tillbaka till varukorgen
+            </Link>
+            .
+          </p>
         </div>
       )}
 

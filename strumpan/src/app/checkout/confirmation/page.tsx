@@ -105,6 +105,8 @@ function ConfirmationContent() {
   }, [redirectStatus, paymentIntentId]);
 
   const isSuccess = redirectStatus === "succeeded";
+  const isProcessing = redirectStatus === "processing";
+  const isCanceled = redirectStatus === "canceled";
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -120,7 +122,7 @@ function ConfirmationContent() {
               Tack för din beställning!
             </h1>
             <p className="mt-2 text-sm text-gray-600">
-              Din betalning har behandlats och godkänts via Stripe Sandbox.
+              Din betalning har behandlats och godkänts.
             </p>
 
             <div className="mt-4 flex flex-wrap justify-center gap-3">
@@ -134,14 +136,26 @@ function ConfirmationContent() {
                 <div className="inline-flex items-center gap-2 rounded-lg bg-emerald-50 px-4 py-2 text-xs text-emerald-800 border border-emerald-200">
                   <span className="font-semibold">Ordernummer:</span>
                   <span className="font-mono font-bold">#{createdOrder.order_id}</span>
-                  <span className="rounded bg-emerald-200 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-900">
-                    Sparad i MariaDB
-                  </span>
                 </div>
               )}
             </div>
+
+            <div className="mt-6 flex flex-wrap justify-center gap-4">
+              <Link
+                href="/"
+                className="rounded-xl bg-gray-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-gray-800"
+              >
+                Tillbaka till startsidan
+              </Link>
+              <Link
+                href="/catalog"
+                className="rounded-xl border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
+              >
+                Fortsätt handla
+              </Link>
+            </div>
           </>
-        ) : (
+        ) : isProcessing ? (
           <>
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-blue-100 text-blue-600">
               <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -149,28 +163,51 @@ function ConfirmationContent() {
               </svg>
             </div>
             <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">
-              Orderbekräftelse
+              Betalningen behandlas
             </h1>
             <p className="mt-2 text-sm text-gray-600">
-              Beställningsstatus: {redirectStatus || "Slutförd"}
+              Din betalning verifieras fortfarande. Kontrollera din e-post om en stund för orderbekräftelse.
             </p>
+            <div className="mt-6 flex flex-wrap justify-center gap-4">
+              <Link
+                href="/"
+                className="rounded-xl bg-gray-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-gray-800"
+              >
+                Tillbaka till startsidan
+              </Link>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-100 text-red-600">
+              <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">
+              {isCanceled ? "Betalningen avbröts" : "Betalningen kunde inte genomföras"}
+            </h1>
+            <p className="mt-2 text-sm text-gray-600">
+              {isCanceled
+                ? "Du avbröt betalningen innan den slutfördes. Inga pengar har dragits och dina varor finns kvar i varukorgen."
+                : "Betalningen godkändes inte eller avbröts. Inga pengar har dragits och dina varor finns kvar i varukorgen."}
+            </p>
+            <div className="mt-6 flex flex-wrap justify-center gap-4">
+              <Link
+                href="/checkout"
+                className="rounded-xl bg-gray-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-gray-800"
+              >
+                Försök betala igen
+              </Link>
+              <Link
+                href="/cart"
+                className="rounded-xl border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
+              >
+                Tillbaka till varukorgen
+              </Link>
+            </div>
           </>
         )}
-
-        <div className="mt-6 flex justify-center gap-4">
-          <Link
-            href="/"
-            className="rounded-xl bg-gray-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-gray-800"
-          >
-            Tillbaka till startsidan
-          </Link>
-          <Link
-            href="/checkout"
-            className="rounded-xl border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
-          >
-            Gå till kassan igen
-          </Link>
-        </div>
       </div>
 
       {orderItemsSnapshot.length > 0 && (
